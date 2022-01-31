@@ -18,5 +18,9 @@
     "titleBar.inactiveBackground": "#9e45c399",
     "titleBar.inactiveForeground": "#e7e7e799"
   },
-  "peacock.remoteColor": "#9e45c3"
+  "peacock.remoteColor": "#9e45c3",
+  "deno.enable": true,
+  "deno.lint": true,
+  "deno.unstable": true,
+  "deno.importMap": "./import-map.json"
 }
