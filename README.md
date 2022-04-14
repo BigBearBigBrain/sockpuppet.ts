@@ -2,6 +2,12 @@
 
 ![img](https://github.com/BigBearBigBrain/sockpuppet.ts/raw/main/sockpuppet-logo.svg)
 
+## Contents
+[Usage](#usage)
+- [Server](#server)
+- [Client](#client)
+[Roadmap](#roadmap)
+
 Sockpuppet is a lightweight WebSocket library that requires minimal configuration to get up and running, while still offering plenty of options for configurations.
 
 The ethos behind Sockpuppet is that the server can be set up and deployed with very little additional code while channels and networks are created dynamically from the front-end.
@@ -14,7 +20,7 @@ There is also a small web server built in that allows for endpoints to be used i
 
 #### Server
 ```
-import { Sockpuppet } from 'http://deno.land/x/sockpuppet/mod.ts'
+import { Sockpuppet } from 'http://deno.land/x/sockpuppet/mod.ts';
 
 const puppet = new Sockpuppet({
   port: 3000
@@ -25,7 +31,7 @@ puppet.createNewChannel('chat');
 
 #### Client
 ```
-import { Sockpuppet } from 'http://deno.land/x/sockpuppet/client/mod.ts'
+import { Sockpuppet } from 'http://deno.land/x/sockpuppet/client/mod.ts';
 
 const puppet = new Sockpuppet('ws://localhost:6969', () => {
   console.log('Sockpuppet is ready to play!');
@@ -41,6 +47,7 @@ The above example uses an explicitly defined "chat" channel. In the future, the 
 - [ ] Better client side interactions
 - [ ] Dynamic channel creation
 - [ ] Channel middleware
+- [ ] Public test site
 - [ ] Networks of channels
 - [ ] Network middleware
 - [ ] React Hooks Package
@@ -48,4 +55,8 @@ The above example uses an explicitly defined "chat" channel. In the future, the 
 - [ ] Vue Package
 - [ ] CDN for compiled client
 - [ ] Docker image for instant deployment
-- [ ] Public test site
+
+---
+
+*More updates coming soon!*
+*❤️ - Emma*
