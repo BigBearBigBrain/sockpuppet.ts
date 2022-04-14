@@ -1,5 +1,7 @@
 # sockpuppet.ts
 
+![img](./sockpuppet-logo.svg)
+
 SockPuppet.ts is the server side package of SockPuppet written for Deno. SockPuppet is a lightweight WebSocket library that requires minimal configuration to get up and running, while still offering plenty of options for configurations.
 
 The ethos behind SockPuppet is that the server can be set up and deployed with very little additional code while channels and networks are created dynamically from the front-end.
