@@ -49,20 +49,12 @@ export class SocketServer extends EventEmitter {
     const client = this.createClient(crypto.randomUUID(), sock);
     sock.onmessage = async (ev) => {
       try {
-        if (typeof ev === "string") {
+        if (typeof ev.data === "string") {
           // text message.
-          await this.handleMessageAsString(client, ev);
-        } else if (ev instanceof Uint8Array) {
+          await this.handleMessageAsString(client, ev.data);
+        } else if (ev.data instanceof Uint8Array) {
           // binary message.
-          await this.handleMessageAsBinary(client, ev);
-        // } else if (ev.) {
-        //   const [, body] = ev;
-        //   // ping.
-        //   console.log("ws:Ping", body);
-        // } else if (isWebSocketCloseEvent(ev)) {
-        //   // close.
-        //   const { code, reason } = ev;
-        //   console.log("ws:Close", code, reason);
+          await this.handleMessageAsBinary(client, ev.data);
         }
       } catch (err) {
         console.error(`failed to receive frame: ${err}`);

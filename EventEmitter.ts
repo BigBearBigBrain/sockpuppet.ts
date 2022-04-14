@@ -71,7 +71,7 @@ channel.listeners.delete(clientId);
     channel.listeners.delete(clientId);
   }
   const client = this.clients.get(clientId);
-  if (client) client.socket.send('disconnected');
+  if (client && client.socket.OPEN) client.socket.send('disconnected');
   this.clients.delete(clientId);
 }
 
