@@ -2,7 +2,7 @@ import { socketCallback } from "./callbackTypes.ts";
 import { Channel } from "./Channel.ts";
 import { Message } from "./Message.ts";
 
-export class SocketsPlus {
+export class Sockpuppet {
   private socket: WebSocket;
 
   public channels: Map<string, Channel>;
