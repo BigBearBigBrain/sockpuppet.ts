@@ -103,7 +103,8 @@ export class SocketServer extends EventEmitter {
         const packet = new Packet(
           client,
           json.send_packet.to,
-          json.send_packet.message
+          json.send_packet.message,
+          json.send_packet.echo
         )
         return await this.transmitter.handlePacket(packet);
       }

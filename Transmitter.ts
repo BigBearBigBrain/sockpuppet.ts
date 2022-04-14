@@ -36,7 +36,7 @@ export default class Transmitter {
     if (RESERVED_EVENT_NAMES.includes(packet.to)) {
       return this.handleReservedEvent(packet);
     }
-
+    
     const channel: Channel | undefined = this.server.channels.get(packet.to);
     if (channel) {
       if (!(channel as Channel).listeners.has((packet.from as Client).id)) throw new Error(`Client ${packet.from.id} is not subscribed to "${packet.to}"`)

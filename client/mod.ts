@@ -1,4 +1,4 @@
-import { socketCallback } from "./callbackTypes.ts";
+import { socketCallback, channelCallback } from "./callbackTypes.ts";
 import { Channel } from "./Channel.ts";
 import { Message } from "./Message.ts";
 
@@ -25,10 +25,24 @@ export class Sockpuppet {
     ]);
   }
 
-  public joinChannel = (channelId: string) => {
-    const channel = new Channel(channelId, this.socket)
-    this.channels.set(channelId, channel);
-    return channel;
+  public joinChannel = (channelId: string, handler: channelCallback<string>) => {
+    if (this.socket.readyState === 1) {
+      const channel = new Channel(channelId, this.socket)
+      this.channels.set(channelId, channel);
+      channel.addListener(handler);
+      this.socket.send(JSON.stringify({
+        connect_to: [channelId]
+      }))
+    } else {
+      this.socket.addEventListener('open', () => {
+        const channel = new Channel(channelId, this.socket)
+        this.channels.set(channelId, channel);
+        channel.addListener(handler);
+        this.socket.send(JSON.stringify({
+          connect_to: [channelId]
+        }));
+      })
+    }
   }
 
   public on = (event: string, callback: socketCallback) => {
@@ -41,6 +55,7 @@ export class Sockpuppet {
   public onDisconnect = (callback: socketCallback) => this.callbacks.get('disconnect')?.push(callback);
 
   private handleMessage = (message: MessageEvent<string>) => {
+    console.log(message.data);
     // Handle any events
     switch (message.data) {
       case "open":
@@ -55,9 +70,9 @@ export class Sockpuppet {
       default:
         try {
           const msg = new Message(JSON.parse(message.data));
-          if (msg.event === 'leave') 
+          if (msg.event === 'leave')
             this.deleteChannel(msg.to);
-          if (msg.event === 'join') 
+          if (msg.event === 'join')
             this.channels.get(msg.to)?.execJoinListeners();
           this.callbacks.get(msg.event || msg.message)?.forEach(cb => cb(msg));
           this.channels.get(msg.to)?.execListeners(msg.message);
@@ -81,6 +96,8 @@ export class Sockpuppet {
       this.channels.delete(channelId);
     }
   }
+
+  public getChannel = (channelId: string) => this.channels.get(channelId);
 }
 
-const isFullUrl = (url: string) => /(wss?|https?):\/\/.+\.(io|com|org|net)(\/.*)?/i.test(url);
+const isFullUrl = (url: string) => /(wss?|https?):\/\/.+\.(io|com|org|net)(\/.*)?/i.test(url) || url.includes('localhost');

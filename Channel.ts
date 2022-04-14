@@ -11,6 +11,13 @@ export default class Channel {
   constructor(channelId: string) {
     this.id = channelId;
     this.listeners = new Map();
+
+    this.callbacks.push((packet) => {
+      for (const [clientId, listener] of this.listeners.entries()) {
+        if (clientId !== packet.from.id || packet.echo)
+          listener.send(JSON.stringify(packet.message));
+      }
+    })
   }
 
   public addListener = (callback: packetCallback) => this.callbacks.push(callback);

@@ -6,9 +6,11 @@ export class Channel<T = string> {
   private socket: WebSocket;
 
   public callbacks: channelCallback<T>[] = [];
-  public joinCallbacks: channelCallback<"join">[] = []
-  public leaveCallbacks: channelCallback<"leave">[] = []
+  public joinCallbacks: channelCallback<"join">[] = [];
+  public leaveCallbacks: channelCallback<"leave">[] = [];
 
+  public echo?: boolean;
+  
   constructor(id: string, socket: WebSocket) {
     this.id = id;
     this.socket = socket;
@@ -16,9 +18,12 @@ export class Channel<T = string> {
 
   public send = (message: string, clientToSendTo?: number) =>
     this.socket.send(JSON.stringify({
-      to: this.id,
-      message,
-      clientToSendTo
+      send_packet: {
+        to: this.id,
+        message,
+        clientToSendTo,
+        echo: this.echo
+      }
     }));
 
   public addListener = (callback: channelCallback<T>) => this.callbacks.push(callback);
