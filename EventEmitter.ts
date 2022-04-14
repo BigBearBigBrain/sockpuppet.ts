@@ -1,10 +1,8 @@
-import { v4 } from "std/uuid/mod.ts";
 import Channel from './Channel.ts';
 import Client from './Client.ts';
 import Sender from './Sender.ts';
 import { packetCallback, disconnectCallback } from './callbackType.ts';
 import { Packet } from './Packet.ts';
-import { WebSocket } from 'std/ws/mod.ts';
 
 export default class EventEmitter {
   constructor(id?: string) {
@@ -17,13 +15,13 @@ export default class EventEmitter {
 
   public channels: Map<string, Channel>;
 
-  public clients: Map<number, Client>;
+  public clients: Map<string, Client>;
 
   public sender: Sender;
 
   public createNewChannel = (channelId?: string) => {
     if (!channelId) {
-      channelId = v4.generate();
+      channelId = crypto.randomUUID();
     }
     const channel = new Channel(channelId)
     this.channels.set(channelId!, channel);
@@ -38,13 +36,13 @@ export default class EventEmitter {
   };
 
 
-  public createClient = (clientId: number, clientSocket: WebSocket) => {
+  public createClient = (clientId: string, clientSocket: WebSocket) => {
     const client = new Client(clientId, clientSocket)
     this.clients.set(clientId, client);
     return client;
   }
 
-  public addClientToChannel = (channelId: string, clientId: number) => {
+  public addClientToChannel = (channelId: string, clientId: string) => {
     const channel: Channel | undefined = this.channels.get(channelId);
     if (!channel) throw new Error(`Channel "${channelId}; does not exist.`);
     const client: Client | undefined = this.clients.get(clientId);
@@ -54,7 +52,7 @@ export default class EventEmitter {
     client.socket.send(`joined ${channelId}`);
   }
 
-  public removeClientFromChannel = (channelId: string, clientId: number) => {
+  public removeClientFromChannel = (channelId: string, clientId: string) => {
     const channel: Channel | undefined = this.channels.get(channelId);
     if (!channel) throw new Error(`Channel "${channelId}; does not exist.`);
     const client = this.clients.get(clientId);
@@ -68,7 +66,7 @@ export default class EventEmitter {
 channel.listeners.delete(clientId);
   }
 
-  public removeClient = (clientId: number) => {
+  public removeClient = (clientId: string) => {
   for (const channel of this.channels.values()) {
     channel.listeners.delete(clientId);
   }
@@ -87,11 +85,11 @@ channel.listeners.delete(clientId);
   public getChannels = () => this.channels;
   public getChannel = (channelId: string) => this.channels.get(channelId);
 
-  public to = (channelId: string, message: unknown, clientToSendTo?: number) => {
+  public to = (channelId: string, message: unknown, clientToSendTo?: string) => {
   this.queuePacket(new Packet(this, channelId, message), clientToSendTo);
 }
 
-  public queuePacket = (packet: Packet, clientToSendTo?: number) => {
+  public queuePacket = (packet: Packet, clientToSendTo?: string) => {
   const channel = this.channels.get(packet.to);
   if (channel) {
     this.sender.add(packet, channel, clientToSendTo);

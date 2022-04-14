@@ -1,7 +1,5 @@
-import { WebSocket } from 'std/ws/mod.ts';
-
 export default class Client {
-  public id: number;
+  public id: string;
   public socket: WebSocket;
 
   public listeningTo: string[] = [];
@@ -10,7 +8,7 @@ export default class Client {
 
   public heartbeat?: number;
 
-  constructor(clientId: number, clientSocket: WebSocket) {
+  constructor(clientId: string, clientSocket: WebSocket) {
     this.id = clientId;
     this.socket = clientSocket;
   }

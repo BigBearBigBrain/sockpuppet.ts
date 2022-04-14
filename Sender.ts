@@ -2,11 +2,11 @@ import { Packet } from './Packet.ts';
 import Channel from './Channel.ts';
 
 export default class Sender {
-  private packetQueue: { packet: Packet, channel: Channel, clientToSendTo?: number }[] = [];
+  private packetQueue: { packet: Packet, channel: Channel, clientToSendTo?: string }[] = [];
 
   private ready = true;
 
-  public add = (packet: Packet, channel: Channel, clientToSendTo?: number) => {
+  public add = (packet: Packet, channel: Channel, clientToSendTo?: string) => {
     this.packetQueue.push({ packet, channel, clientToSendTo });
     this.send();
   }
@@ -31,7 +31,7 @@ export default class Sender {
               message: queueItem.packet.message
             });
             await socket.send(message);
-          } catch (e) {
+          } catch (_e) {
             console.log(`Unable to send message to ${clientId}`);
           }
         }

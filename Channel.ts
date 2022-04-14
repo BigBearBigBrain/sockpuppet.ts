@@ -1,10 +1,9 @@
 import { packetCallback, disconnectCallback } from './callbackType.ts';
-import { WebSocket } from 'std/ws/mod.ts';
 
 export default class Channel {
   public id: string;
 
-  public listeners: Map<number, WebSocket>;
+  public listeners: Map<string, WebSocket>;
 
   public callbacks: packetCallback[] = [];
   public disconnectCallbacks: disconnectCallback[] = [];

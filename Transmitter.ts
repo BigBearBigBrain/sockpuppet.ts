@@ -32,7 +32,7 @@ export default class Transmitter {
     this.server = server;
   }
 
-  public handlePacket = async (packet: Packet) => {
+  public handlePacket = (packet: Packet) => {
     if (RESERVED_EVENT_NAMES.includes(packet.to)) {
       return this.handleReservedEvent(packet);
     }
@@ -72,6 +72,7 @@ export default class Transmitter {
             }
           }
         }
+        break;
 
       case "reconnect":
         // this does something, eventually
@@ -82,7 +83,7 @@ export default class Transmitter {
     }
   }
 
-  public hydrateClient = (clientId: number): void => {
+  public hydrateClient = (clientId: string): void => {
     if (this.reconnect) {
       const client = this.server.clients.get(clientId);
       if (client) {
@@ -92,12 +93,12 @@ export default class Transmitter {
     }
   }
 
-  public startHeartbeat(clientId: number) {
-    let id = setInterval(() => this.ping(clientId), this.pingInterval);
+  public startHeartbeat(clientId: string) {
+    const id = setInterval(() => this.ping(clientId), this.pingInterval);
     return id;
   }
 
-  public ping = (clientId: number) => {
+  public ping = (clientId: string) => {
     const client = this.server.clients.get(clientId);
     "Heartbeat"
     if (client) {
@@ -110,7 +111,7 @@ export default class Transmitter {
     }
   }
 
-  public timeoutPing = (clientId: number) => {
+  public timeoutPing = (clientId: string) => {
     const client = this.server.clients.get(clientId);
     if (client) {
       if (client.heartbeat) clearInterval(client.heartbeat);

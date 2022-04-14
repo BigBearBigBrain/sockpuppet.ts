@@ -1,12 +1,5 @@
 // Copyright 2018-2020 the Deno authors. All rights reserved. MIT license.
-import { serve, Server, HTTPOptions, ServerRequest } from "http/server.ts";
-import {
-  acceptWebSocket,
-  isWebSocketCloseEvent,
-  isWebSocketPingEvent,
-  WebSocket,
-  acceptable
-} from "std/ws/mod.ts";
+import { serve } from "https://deno.land/std@0.134.0/http/mod.ts";
 
 import EventEmitter from './EventEmitter.ts';
 import Client from './Client.ts';
@@ -15,94 +8,73 @@ import Transmitter from './Transmitter.ts';
 import ITransmitterOptions from './ITransmitterOptions.ts';
 
 export class SocketServer extends EventEmitter {
-  private server: Server;
-
-  constructor(options: HTTPOptions, transmitterOptions?: ITransmitterOptions) {
+  constructor(options: Deno.ListenOptions, transmitterOptions?: ITransmitterOptions) {
     super();
-    this.server = serve(options);
     this.port = options.port;
     this.hostname = options.hostname;
     this.transmitter = new Transmitter(this, transmitterOptions);
     this.Run();
   }
 
-  port: number;
+  port?: number;
   hostname?: string;
 
   public transmitter: Transmitter;
 
-  getServer = () => {
-    return this.server;
-  }
-
-  Run = async () => {
+  Run = () => {
     /** websocket echo server */
-    console.log(`websocket server is running on :${this.port}`);
-    for await (const req of this.server) {
-      if (acceptable(req)) {
-        const { conn, r: bufReader, w: bufWriter, headers } = req;
-        acceptWebSocket({
-          conn,
-          bufReader,
-          bufWriter,
-          headers,
-        })
-          .then((sock: WebSocket) => this.handleWs(sock, conn))
-          .catch(async (err: any) => {
-            console.error(`failed to accept websocket: ${err}`);
-            await req.respond({ status: 400 });
-          });
+    console.log(`Sockpuppet is running on :${this.port}`);
+
+    serve((req) => {
+      if (req.headers.get('upgrade') === 'websocket') {
+        try {
+          const { response, socket } = Deno.upgradeWebSocket(req);
+          this.handleWs(socket);
+          return response;
+        } catch (err) {
+          console.error(`failed to accept websocket: ${err}`);
+          return new Response('There was an error while upgrading the socket\n' + err, { status: 500 });
+        }
       } else if (this.handleNonWS) {
-        this.handleNonWS(req);
+        return this.handleNonWS(req);
       } else {
-        req.respond({ status: 404 });
+        return new Response(this.handleNonWS ? 'Resource not found' : 'Request is not upgradable', { status: this.handleNonWS ? 404 : 400 });
       }
-    }
+    }, { hostname: this.hostname, port: this.port })
   }
 
-  handleNonWS?: (req: ServerRequest) => Promise<void>;
+  handleNonWS?: (req: Request) => Response;
 
-  handleWs = async (sock: WebSocket, conn: Deno.Conn) => {
-    const client = this.createClient(conn.rid, sock);
-    try {
-      for await (const ev of sock) {
+  handleWs = (sock: WebSocket) => {
+    const client = this.createClient(crypto.randomUUID(), sock);
+    sock.onmessage = async (ev) => {
+      try {
         if (typeof ev === "string") {
           // text message.
           await this.handleMessageAsString(client, ev);
         } else if (ev instanceof Uint8Array) {
           // binary message.
           await this.handleMessageAsBinary(client, ev);
-        } else if (isWebSocketPingEvent(ev)) {
-          const [, body] = ev;
-          // ping.
-          console.log("ws:Ping", body);
-        } else if (isWebSocketCloseEvent(ev)) {
-          // close.
-          const { code, reason } = ev;
-          console.log("ws:Close", code, reason);
+        // } else if (ev.) {
+        //   const [, body] = ev;
+        //   // ping.
+        //   console.log("ws:Ping", body);
+        // } else if (isWebSocketCloseEvent(ev)) {
+        //   // close.
+        //   const { code, reason } = ev;
+        //   console.log("ws:Close", code, reason);
         }
-      }
-    } catch (err) {
-      console.error(`failed to receive frame: ${err}`);
+      } catch (err) {
+        console.error(`failed to receive frame: ${err}`);
 
-      if (!sock.isClosed) {
-        this.removeClient(conn.rid);
-        await sock.close(1000).catch(console.error);
+        if (!sock.CLOSED) {
+          await sock.close(1000);
+        }
       }
     }
-  }
 
-  public close = async () => {
-    while (true) {
-      if (!this.sender.hasPackets()) {
-        if (this.server) {
-          try {
-            this.server.close();
-          } catch (e) {
-            break;
-          }
-        }
-      }
+    sock.onclose = () => {
+      this.removeClient(client.id);
     }
   }
 
