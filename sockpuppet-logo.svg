@@ -8,15 +8,21 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="51.838497mm"
-   height="97.980049mm"
-   viewBox="0 0 51.838497 97.980049"
+   width="135.96822mm"
+   height="135.96822mm"
+   viewBox="0 0 135.96822 135.96822"
    version="1.1"
    id="svg8"
    inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
    sodipodi:docname="sockpuppet-logo.svg">
   <defs
      id="defs2">
+    <rect
+       id="rect853"
+       height="14.833459"
+       width="92.207985"
+       y="-19.342503"
+       x="-5.6241841" />
     <linearGradient
        inkscape:collect="always"
        id="linearGradient895">
@@ -51,14 +57,14 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
-     inkscape:cx="-60.173378"
-     inkscape:cy="245.19243"
+     inkscape:cx="101.56755"
+     inkscape:cy="276.1186"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
      showgrid="false"
      inkscape:window-width="3440"
-     inkscape:window-height="1417"
+     inkscape:window-height="1369"
      inkscape:window-x="-8"
      inkscape:window-y="1432"
      inkscape:window-maximized="1" />
@@ -75,7 +81,7 @@
     </rdf:RDF>
   </metadata>
   <g
-     transform="translate(-9.3429095,1.0345392)"
+     transform="translate(33.451045,19.90787)"
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
@@ -197,5 +203,40 @@
        style="fill:none;stroke:#000000;stroke-width:0.562611;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:0, 0.562611, 1.12522, 1.68783, 2.25044, 2.81305, 3.37567, 3.93828, 4.50089, 5.0635, 5.62611, 6.18872, 6.75133, 7.31394, 7.87655;stroke-dashoffset:0;stroke-opacity:1"
        d="m 39.970982,77.567572 1.511903,13.459655"
        id="path909" />
+    <path
+       d="M 89.685272,48.483578 A 56.221291,56.221291 0 0 1 33.467661,104.70487 56.221291,56.221291 0 0 1 -22.757308,48.490937 56.221291,56.221291 0 0 1 33.452943,-7.7377118 56.221291,56.221291 0 0 1 89.68527,48.468859"
+       sodipodi:arc-type="arc"
+       sodipodi:open="true"
+       sodipodi:end="6.2829235"
+       sodipodi:start="0"
+       sodipodi:ry="56.221291"
+       sodipodi:rx="56.221291"
+       sodipodi:cy="48.483578"
+       sodipodi:cx="33.463982"
+       sodipodi:type="arc"
+       id="path849"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14;stroke-dashoffset:0" />
+    <text
+       transform="rotate(-120.99102,33.134813,47.609856)"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.5833px;line-height:1.25;font-family:'Permanent Marker';-inkscape-font-specification:'Permanent Marker, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;letter-spacing:0px;word-spacing:0px;white-space:pre;fill:#000000;fill-opacity:1;stroke:none"
+       id="text851"
+       xml:space="preserve"><textPath
+         id="textPath860"
+         xlink:href="#path849"><tspan
+           id="tspan855"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.5833px;font-family:'Permanent Marker';-inkscape-font-specification:'Permanent Marker, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal">Sockpuppet</tspan></textPath></text>
+    <path
+       d="M 101.40817,48.076237 A 66.875107,66.875107 0 0 1 34.537439,114.95134 66.875107,66.875107 0 0 1 -32.342044,48.084991 66.875107,66.875107 0 0 1 34.519931,-18.798869 66.875107,66.875107 0 0 1 101.40817,48.058729"
+       sodipodi:arc-type="arc"
+       sodipodi:open="true"
+       sodipodi:end="6.2829235"
+       sodipodi:start="0"
+       sodipodi:ry="66.875107"
+       sodipodi:rx="66.875107"
+       sodipodi:cy="48.076237"
+       sodipodi:cx="34.533062"
+       sodipodi:type="arc"
+       id="path863"
+       style="fill:none;stroke:#000000;stroke-width:2.218;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0" />
   </g>
 </svg>
