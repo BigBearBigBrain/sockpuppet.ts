@@ -15,7 +15,10 @@ export default class Channel {
     this.callbacks.push((packet) => {
       for (const [clientId, listener] of this.listeners.entries()) {
         if (clientId !== packet.from.id || packet.echo)
-          listener.send(JSON.stringify(packet.message));
+          listener.send(JSON.stringify({
+            message: packet.message,
+            to: packet.to
+          }));
       }
     })
   }

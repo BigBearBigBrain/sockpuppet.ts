@@ -19,7 +19,7 @@ export default class EventEmitter {
 
   public sender: Sender;
 
-  public createNewChannel = (channelId?: string) => {
+  public _createNewChannel = (channelId?: string) => {
     if (!channelId) {
       channelId = crypto.randomUUID();
     }
@@ -62,16 +62,16 @@ export default class EventEmitter {
       to: clientId,
       from: this.id
     }));
-  channel.disconnectCallbacks.forEach(cb => cb(clientId));
-channel.listeners.delete(clientId);
+    channel.disconnectCallbacks.forEach(cb => cb(clientId));
+    channel.listeners.delete(clientId);
   }
 
   public removeClient = (clientId: string) => {
-  for (const channel of this.channels.values()) {
-    channel.listeners.delete(clientId);
+    for (const channel of this.channels.values()) {
+      channel.listeners.delete(clientId);
+    }
+    this.clients.delete(clientId);
   }
-  this.clients.delete(clientId);
-}
 
   public connectCallbacks: (packetCallback)[] = [];
   public onConnect = (callback: packetCallback) => this.connectCallbacks.push(callback);
@@ -84,13 +84,13 @@ channel.listeners.delete(clientId);
   public getChannel = (channelId: string) => this.channels.get(channelId);
 
   public to = (channelId: string, message: unknown, clientToSendTo?: string) => {
-  this.queuePacket(new Packet(this, channelId, message), clientToSendTo);
-}
+    this.queuePacket(new Packet(this, channelId, message), clientToSendTo);
+  }
 
   public queuePacket = (packet: Packet, clientToSendTo?: string) => {
-  const channel = this.channels.get(packet.to);
-  if (channel) {
-    this.sender.add(packet, channel, clientToSendTo);
-  } else throw new Error(`Channel "${packet.to}" does not exist!`);
-}
+    const channel = this.channels.get(packet.to);
+    if (channel) {
+      this.sender.add(packet, channel, clientToSendTo);
+    } else throw new Error(`Channel "${packet.to}" does not exist!`);
+  }
 }

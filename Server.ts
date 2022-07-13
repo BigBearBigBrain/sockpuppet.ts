@@ -6,8 +6,11 @@ import Client from './Client.ts';
 import { Packet } from './Packet.ts';
 import Transmitter from './Transmitter.ts';
 import ITransmitterOptions from './ITransmitterOptions.ts';
+import Channel from './Channel.ts'
 
 export class SocketServer extends EventEmitter {
+  protected PermanentChannels: Map<string, Channel> = new Map();
+
   constructor(options: Deno.ListenOptions, transmitterOptions?: ITransmitterOptions) {
     super();
     this.port = options.port;
@@ -132,8 +135,30 @@ export class SocketServer extends EventEmitter {
         });
       }
 
+      if (json.create_channel) {
+        try {
+          const channel = this.channels.get(json.create_channel) || this._createNewChannel(json.create_channel);
+          client.socket.send(JSON.stringify({
+            event: 'create',
+            status: 'SUCCESS',
+            channelId: channel.id
+          }));
+        } catch (e) {
+          client.socket.send(JSON.stringify({
+            event: 'create',
+            status: 'FAILED',
+            reason: e.message
+          }));
+        }
+      }
+
     } catch (e) {
       client.socket.send(e.message);
     }
+  }
+
+  public createChannel = (channelId: string) => {
+    this.PermanentChannels.set(channelId, this._createNewChannel(channelId));
+    return this.PermanentChannels.get(channelId)!;
   }
 }

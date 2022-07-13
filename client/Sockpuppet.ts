@@ -1,7 +1,7 @@
 import { socketCallback, channelCallback } from "./callbackTypes.ts";
 import { Channel } from "./Channel.ts";
 import { Message } from "./Message.ts";
-
+// 1.19.3
 export class Sockpuppet {
   private socket: WebSocket;
 
@@ -74,6 +74,8 @@ export class Sockpuppet {
             this.deleteChannel(msg.to);
           if (msg.event === 'join')
             this.channels.get(msg.to)?.execJoinListeners();
+          if (msg.event === 'create') 
+            this.onChannelCreate(msg) 
           this.callbacks.get(msg.event || msg.message)?.forEach(cb => cb(msg));
           this.channels.get(msg.to)?.execListeners(msg.message);
         } catch (_e) {
@@ -98,6 +100,34 @@ export class Sockpuppet {
   }
 
   public getChannel = (channelId: string) => this.channels.get(channelId);
+
+  public createChannel = (channelId: string) => new Promise<Message>((res, rej) => {
+    this.socket.send(JSON.stringify({
+      create_channel: channelId
+    }));
+
+    const poll = setInterval(() => {
+      const channelMessage = this.channelCreateMessages.get(channelId);
+      if (channelMessage) {
+        clearInterval(poll);
+        switch (channelMessage.status) {
+          case 'FAILED':
+            rej(channelMessage);
+            break;
+          case 'SUCCESS':
+            res(channelMessage);
+            break;
+        }
+        this.channelCreateMessages.delete(channelId);
+      }
+    }, 10);
+  })
+
+  private channelCreateMessages: Map<string, Message> = new Map();
+
+  private onChannelCreate = (msg: Message) => {
+    this.channelCreateMessages.set(msg.channelId!, msg);
+  }
 }
 
 const isFullUrl = (url: string) => /(wss?|https?):\/\/.+\.(io|com|org|net)(\/.*)?/i.test(url) || url.includes('localhost');

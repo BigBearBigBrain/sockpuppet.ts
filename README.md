@@ -6,7 +6,7 @@
 [Usage](#usage)
 - [Server](#server)
 - [Client](#client)
-[Roadmap](#roadmap)
+- [Roadmap](#roadmap)
 
 Sockpuppet is a lightweight WebSocket library that requires minimal configuration to get up and running, while still offering plenty of options for configurations.
 
@@ -26,7 +26,7 @@ const puppet = new Sockpuppet({
   port: 3000
 });
 
-puppet.createNewChannel('chat');
+puppet.createChannel('chat');
 ```
 
 #### Client
