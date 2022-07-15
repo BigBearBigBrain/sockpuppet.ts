@@ -70,6 +70,7 @@ export class Sockpuppet {
       default:
         try {
           const msg = new Message(JSON.parse(message.data));
+          this.callbacks.get('message')?.forEach(cb => cb(msg));
           if (msg.event === 'leave')
             this.deleteChannel(msg.to);
           if (msg.event === 'join')

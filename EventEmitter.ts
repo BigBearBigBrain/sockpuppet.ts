@@ -62,8 +62,8 @@ export default class EventEmitter {
       to: clientId,
       from: this.id
     }));
-    channel.disconnectCallbacks.forEach(cb => cb(clientId));
     channel.listeners.delete(clientId);
+    channel.disconnectCallbacks.forEach(cb => cb(clientId));
   }
 
   public removeClient = (clientId: string) => {

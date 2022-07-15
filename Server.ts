@@ -93,6 +93,9 @@ export class SocketServer extends EventEmitter {
       case "test":
         client.socket.send(`Server started on ${this.hostname}:${this.port}`);
         break;
+      case "channels":
+        client.socket.send(JSON.stringify(Array.from(this.channels.values()).map(c => c.id)));
+        break;
       default:
         return await this.handleMessageAsJson(client, message);
     }
@@ -137,7 +140,13 @@ export class SocketServer extends EventEmitter {
 
       if (json.create_channel) {
         try {
-          const channel = this.channels.get(json.create_channel) || this._createNewChannel(json.create_channel);
+          let channel = this.channels.get(json.create_channel)
+          if (!channel) {
+            channel = this._createNewChannel(json.create_channel);
+            channel.disconnectCallbacks.push(() => {
+              if (!channel!.listeners.size) this.channels.delete(channel!.id)
+            })
+          } 
           client.socket.send(JSON.stringify({
             event: 'create',
             status: 'SUCCESS',
