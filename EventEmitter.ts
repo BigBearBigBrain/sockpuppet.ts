@@ -5,12 +5,6 @@ import { packetCallback, disconnectCallback } from './callbackType.ts';
 import { Packet } from './Packet.ts';
 
 export default class EventEmitter {
-  constructor(id?: string) {
-    this.channels = new Map();
-    this.clients = new Map();
-    this.sender = new Sender();
-    this.id = id || "Server";
-  }
   public id: string;
 
   public channels: Map<string, Channel>;
@@ -19,13 +13,37 @@ export default class EventEmitter {
 
   public sender: Sender;
 
+  public channelMiddleware: Map<string, packetCallback> = new Map();
+  
+  constructor(id?: string) {
+    this.channels = new Map();
+    this.clients = new Map();
+    this.sender = new Sender();
+    this.id = id || "Server";
+  }
+
   public _createNewChannel = (channelId?: string) => {
     if (!channelId) {
       channelId = crypto.randomUUID();
     }
     const channel = new Channel(channelId)
     this.channels.set(channelId!, channel);
+    for (const [nameRule, callback] of this.channelMiddleware.entries()) {
+      const rx = new RegExp(nameRule, 'g');
+      if (rx.test(channelId)) {
+        channel.middleware.push(callback);
+      }
+    }
     return channel;
+  }
+
+  /**
+   * 
+   * @param channelNameRule channelNameRule is used to construct a RegExp to test channel names to add the callback to
+   * @param callback callback to be called before any channel listeners are called
+   */
+  public use = (channelNameRule: string, callback: packetCallback) => {
+    this.channelMiddleware.set(channelNameRule, callback);
   }
 
   public closeChannel = (channelId: string) => {

@@ -6,6 +6,7 @@ export default class Channel {
   public listeners: Map<string, WebSocket>;
 
   public callbacks: packetCallback[] = [];
+  public middleware: packetCallback[] = [];
   public disconnectCallbacks: disconnectCallback[] = [];
 
   constructor(channelId: string) {

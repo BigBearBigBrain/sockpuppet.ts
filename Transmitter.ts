@@ -41,6 +41,10 @@ export default class Transmitter {
     if (channel) {
       if (!(channel as Channel).listeners.has((packet.from as Client).id)) throw new Error(`Client ${packet.from.id} is not subscribed to "${packet.to}"`)
 
+      for (const callback of channel.middleware) {
+        callback(packet);
+      }
+
       for (const callback of channel.callbacks) {
         callback(packet);
       }
