@@ -24,7 +24,9 @@ export default class Channel {
     })
   }
 
-  public addListener = (callback: packetCallback) => this.callbacks.unshift(callback);
+  public addListener = (callback: packetCallback) => 
+    this.callbacks.push(callback, this.callbacks.pop()!);
+  
 
   public onDisconnect = (callback: disconnectCallback) => this.disconnectCallbacks.push(callback);
 }
