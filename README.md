@@ -40,7 +40,7 @@ const puppet = new Sockpuppet('ws://localhost:6969', () => {
 }
 ```
 
-The above example uses an explicitly defined "chat" channel. In the future, the `createNewChannel` method will also be available on the client side so cases where you need to create a new channel can be done more dynamically from the front end without needing to worry about those cases in your setup.
+The above example uses an explicitly defined "chat" channel. The `createChannel` method will also be available on the client side so cases where you need to create a new channel can be done more dynamically from the front end without needing to worry about those cases in your setup.
 
 ### Roadmap
 - [x] Basic channel structure

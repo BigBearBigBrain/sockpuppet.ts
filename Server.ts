@@ -43,7 +43,7 @@ export class SocketServer extends EventEmitter {
       } else {
         return new Response(this.handleNonWS ? 'Resource not found' : 'Request is not upgradable', { status: this.handleNonWS ? 404 : 400 });
       }
-    }, { hostname: this.hostname, port: this.port })
+    }, { hostname: this.hostname, port: this.port || 5038 })
   }
 
   handleNonWS?: (req: Request) => Response;
