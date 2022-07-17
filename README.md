@@ -45,8 +45,8 @@ The above example uses an explicitly defined "chat" channel. In the future, the 
 ### Roadmap
 - [x] Basic channel structure
 - [ ] Better client side interactions
-- [ ] Dynamic channel creation
-- [ ] Channel middleware
+- [x] Dynamic channel creation
+- [x] Channel middleware
 - [ ] Public test site
 - [ ] Networks of channels
 - [ ] Network middleware
