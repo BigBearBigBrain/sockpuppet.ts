@@ -31,7 +31,7 @@ export class SocketServer extends EventEmitter {
     serve((req) => {
       if (req.headers.get('upgrade') === 'websocket') {
         try {
-          const { response, socket } = Deno.upgradeWebSocket(req);
+          const { response, socket } = Deno.upgradeWebSocket(req, { idleTimeout: 0 });
           this.handleWs(socket);
           return response;
         } catch (err) {
@@ -146,7 +146,7 @@ export class SocketServer extends EventEmitter {
             channel.disconnectCallbacks.push(() => {
               if (!channel!.listeners.size) this.channels.delete(channel!.id)
             })
-          } 
+          }
           client.socket.send(JSON.stringify({
             event: 'create',
             status: 'SUCCESS',

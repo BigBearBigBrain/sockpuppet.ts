@@ -66,7 +66,9 @@ export class Sockpuppet {
         this.callbacks.get('disconnect')?.forEach(cb => cb(message.data));
         this.channels.forEach(channel => channel.execLeaveListeners());
         break;
-      // case ""
+      case "ping":
+        this.socket.send('pong');
+        break;
       default:
         try {
           const msg = new Message(JSON.parse(message.data));
