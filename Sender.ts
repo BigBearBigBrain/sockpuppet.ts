@@ -30,7 +30,7 @@ export default class Sender {
               to: queueItem.packet.to,
               message: queueItem.packet.message
             });
-            console.log(message);
+            // console.log(message);
             await socket.send(message);
           } catch (_e) {
             console.log(`Unable to send message to ${clientId}`);

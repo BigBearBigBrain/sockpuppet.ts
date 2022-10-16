@@ -55,7 +55,6 @@ export class Sockpuppet {
   public onDisconnect = (callback: socketCallback) => this.callbacks.get('disconnect')?.push(callback);
 
   private handleMessage = (message: MessageEvent<string>) => {
-    console.log(message.data);
     // Handle any events
     switch (message.data) {
       case "open":
