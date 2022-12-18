@@ -2,6 +2,10 @@ import { socketCallback, channelCallback } from "./callbackTypes.ts";
 import { Channel } from "./Channel.ts";
 import { Message } from "./Message.ts";
 // 1.19.3
+
+interface PuppetOptions {
+  keepAlive?: boolean;
+}
 export class Sockpuppet {
   private socket: WebSocket;
 
@@ -9,7 +13,11 @@ export class Sockpuppet {
 
   public callbacks: Map<string, socketCallback[]>;
 
-  constructor(path: string, onConnect?: () => void) {
+  private initialPing?: number;
+
+  private keepAlive = true;
+
+  constructor(path: string, onConnect?: () => void, options?: PuppetOptions) {
     if (isFullUrl(path)) this.socket = new WebSocket(path)
     else this.socket = new WebSocket(`${window.location.host}${path}`);
 
@@ -17,7 +25,12 @@ export class Sockpuppet {
       onConnect();
     })
 
+    this.keepAlive = options?.keepAlive ?? this.keepAlive;
+
     this.socket.addEventListener('message', this.handleMessage);
+
+    if (this.keepAlive)
+      this.initialPing = setTimeout(() => this.socket.send('pong'), 5000)
 
     this.channels = new Map();
     this.callbacks = new Map([
@@ -66,7 +79,9 @@ export class Sockpuppet {
         this.channels.forEach(channel => channel.execLeaveListeners());
         break;
       case "ping":
-        this.socket.send('pong');
+        clearTimeout(this.initialPing);
+        if (this.keepAlive)
+          this.socket.send('pong');
         break;
       default:
         try {
@@ -76,8 +91,8 @@ export class Sockpuppet {
             this.deleteChannel(msg.to);
           if (msg.event === 'join')
             this.channels.get(msg.to)?.execJoinListeners();
-          if (msg.event === 'create') 
-            this.onChannelCreate(msg) 
+          if (msg.event === 'create')
+            this.onChannelCreate(msg)
           this.callbacks.get(msg.event || msg.message)?.forEach(cb => cb(msg));
           this.channels.get(msg.to)?.execListeners(msg.message);
         } catch (_e) {
