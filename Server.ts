@@ -50,6 +50,10 @@ export class SocketServer extends EventEmitter {
 
   handleWs = (sock: WebSocket) => {
     const client = this.createClient(crypto.randomUUID(), sock);
+    sock.onopen = () => {
+      sock.send('ping');
+    }
+
     sock.onmessage = async (ev) => {
       try {
         if (typeof ev.data === "string") {
@@ -88,7 +92,7 @@ export class SocketServer extends EventEmitter {
         client.socket.send('pong');
         break;
       case "pong":
-        client.socket.send('ping');
+        this.transmitter.hydrateClient(client.id);
         break;
       case "test":
         client.socket.send(`Server started on ${this.hostname}:${this.port}`);
