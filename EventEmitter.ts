@@ -14,7 +14,7 @@ export default class EventEmitter {
   public sender: Sender;
 
   public channelMiddleware: Map<string, packetCallback> = new Map();
-  
+
   constructor(id?: string) {
     this.channels = new Map();
     this.clients = new Map();
@@ -55,9 +55,13 @@ export default class EventEmitter {
 
 
   public createClient = (clientId: string, clientSocket: WebSocket) => {
-    const client = new Client(clientId, clientSocket)
-    this.clients.set(clientId, client);
-    return client;
+    if (!this.clients.get(clientId)) {
+      const client = new Client(clientId, clientSocket)
+      this.clients.set(clientId, client);
+      return client;
+    } else {
+      return this.clients.get(clientId)!;
+    }
   }
 
   public addClientToChannel = (channelId: string, clientId: string) => {

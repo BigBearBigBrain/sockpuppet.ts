@@ -74,6 +74,9 @@ export default class Transmitter {
               this.server.createClient(packet.from.id, packet.from.socket);
               this.hydrateClient(packet.from.id);
             }
+            // TODO: cleanup this spaghetti
+          } else if (!client.pongReceived || !client.heartbeat) {
+            this.hydrateClient(packet.from.id);
           }
         }
         break;
