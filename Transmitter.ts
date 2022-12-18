@@ -90,7 +90,7 @@ export default class Transmitter {
   public hydrateClient = (clientId: string): void => {
     if (this.reconnect) {
       const client = this.server.clients.get(clientId);
-      if (client) {
+      if (client && !client.pongReceived) {
         client.pongReceived = true;
         client.heartbeat = this.startHeartbeat(clientId);
       }

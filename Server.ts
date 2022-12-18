@@ -91,9 +91,11 @@ export class SocketServer extends EventEmitter {
       case "ping":
         client.socket.send('pong');
         break;
-      case "pong":
-        this.transmitter.hydrateClient(client.id);
+      case "pong": {
+        const packet = new Packet(client, 'pong');
+        this.transmitter.handlePacket(packet);
         break;
+      }
       case "test":
         client.socket.send(`Server started on ${this.hostname}:${this.port}`);
         break;
