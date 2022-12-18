@@ -51,7 +51,7 @@ export class SocketServer extends EventEmitter {
   handleWs = (sock: WebSocket) => {
     const client = this.createClient(crypto.randomUUID(), sock);
     sock.onopen = () => {
-      sock.send('ping');
+      setTimeout(() => sock.send('ping'), 2000)
     }
 
     sock.onmessage = async (ev) => {
