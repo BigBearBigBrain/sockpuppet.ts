@@ -7,22 +7,22 @@ module.exports = {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    colors: lerpColors({
-      grizzly: {
-        100: '#23282E',
-        0: '#389C9C'
-      },
-      purple: {
-        0: '#b021b2',
-        50: '#651366',
-        100: '#190419'
-      },
-      white: '#FCFCFC',
-      green: '#005B1D'
-    }, {
-      interval: 10
-    }),
     extend: {
+      colors: lerpColors({
+        grizzly: {
+          100: '#23282E',
+          0: '#386C9C'
+        },
+        purple: {
+          0: '#b021b2',
+          50: '#651366',
+          100: '#190419'
+        },
+        white: '#FCFCFC',
+        green: '#005B1D'
+      }, {
+        interval: 5,
+      }),
       // colors: {
       //   bgColor: '#23282E',
       //   grizzly: {

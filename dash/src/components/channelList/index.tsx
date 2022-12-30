@@ -27,7 +27,7 @@ export const ChannelList: FunctionComponent = () => {
   }, [fetchChannelList])
 
   return (
-    <div class="bg-grizzly-100/70 h-full rounded-md p-2">
+    <div class="dark:bg-grizzly-100/70 bg-grizzly-100/10 h-full rounded-lg p-2">
       <div class="flex justify-between">
         <h3 class="uppercase font-bold mt-2">channels</h3>
         <button class="bg-green">Create Channel</button>
