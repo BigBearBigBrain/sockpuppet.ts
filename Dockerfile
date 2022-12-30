@@ -4,9 +4,9 @@ EXPOSE 5038
 WORKDIR /sockpuppet
 USER deno
 
-COPY test.ts .
+COPY docker.ts .
 
-RUN deno cache test.ts
+RUN deno cache docker.ts
 
 ADD . .
 CMD ["run", "--allow-net", "test.ts"]
