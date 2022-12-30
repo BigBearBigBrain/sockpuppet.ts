@@ -69,7 +69,7 @@ export class SocketServer extends EventEmitter {
     }
 
     const headers = new Headers(req.headers);
-    headers.set('Content-Type', 'text/' + getMime(path))
+    headers.set('Content-Type', getMime(path))
 
     const res = new Response(file!.readable, {headers});
     return res;
@@ -127,7 +127,7 @@ export class SocketServer extends EventEmitter {
         client.socket.send(`Server started on ${this.hostname}:${this.port}`);
         break;
       case "channels":
-        client.socket.send(JSON.stringify(Array.from(this.channels.values()).map(c => c.id)));
+        client.socket.send(JSON.stringify(Array.from(this.channels.values()).map(c => ({id: c.id, listeners: c.listeners.size}))));
         break;
       default:
         return await this.handleMessageAsJson(client, message);

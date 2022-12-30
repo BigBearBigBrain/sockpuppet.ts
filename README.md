@@ -19,7 +19,7 @@ There is also a small web server built in that allows for endpoints to be used i
 ## Usage
 
 #### Server
-```
+```ts
 import { Sockpuppet } from 'http://deno.land/x/sockpuppet/mod.ts';
 
 const puppet = new Sockpuppet({
@@ -30,7 +30,7 @@ puppet.createChannel('chat');
 ```
 
 #### Client
-```
+```js
 import { Sockpuppet } from 'http://deno.land/x/sockpuppet/client/mod.ts';
 
 const puppet = new Sockpuppet('ws://localhost:6969', () => {
@@ -42,19 +42,38 @@ const puppet = new Sockpuppet('ws://localhost:6969', () => {
 
 The above example uses an explicitly defined "chat" channel. The `createChannel` method will also be available on the client side so cases where you need to create a new channel can be done more dynamically from the front end without needing to worry about those cases in your setup.
 
+#### Dashboard - Puppetshow
+Sockpuppet now ships with a built-in dashboard called Puppetshow! Puppetshow will allow you to see real-time statistics* of your server, as well as give you tools to be able to interact with and manage channels and networks.
+
+The dashboard is on by default, however it can be disabled by setting `PuppetOptions.dashboard` to `false`:
+```ts
+...
+const puppet = new Sockpuppet({
+  ...options,
+  dashboard: false
+})
+...
+```
+
+**statistics are currently volatile and only show records from the time the server was started. Eventually, these statistics will be recorded permanently*
+
+## Docker
+There is now a Docker image available on Dockerhub that allows you to spin up a no-config Sockpuppet instance. Simply run `docker pull cyborggrizzly/sockpuppet` to pull the image or include it in your own Docker ecosystem.
+
+
 ### Roadmap
 - [x] Basic channel structure
-- [ ] Better client side interactions
+- [X] Better client side interactions
 - [x] Dynamic channel creation
 - [x] Channel middleware
 - [ ] Public test site
-- [ ] Networks of channels
-- [ ] Network middleware
+- [X] Networks of channels
+- [X] Network middleware
 - [ ] React Hooks Package
 - [ ] Angular Package
 - [ ] Vue Package
 - [ ] CDN for compiled client
-- [ ] Docker image for instant deployment
+- [X] Docker image for instant deployment
 
 ---
 

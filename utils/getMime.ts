@@ -3,8 +3,15 @@ export const getMime = (path: string) => {
 
   switch (extension) {
     case 'js':
-      return 'javascript';
+      return 'text/javascript';
+    case 'svg':
+      return 'image/svg+xml';
+    case 'jpeg':
+    case 'gif':
+    case 'png':
+    case 'webp':
+      return 'image/' + extension
     default:
-      return extension;
+      return 'text/' + extension;
   }
 }
