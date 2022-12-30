@@ -8,6 +8,8 @@ export default class Client {
 
   public heartbeat?: number;
 
+  public channelListSubscriber = false;
+
   constructor(clientId: string, clientSocket: WebSocket) {
     this.id = clientId;
     this.socket = clientSocket;

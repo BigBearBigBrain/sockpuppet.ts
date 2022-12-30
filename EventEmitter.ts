@@ -34,6 +34,7 @@ export default class EventEmitter {
         channel.middleware.push(callback);
       }
     }
+    this.refreshChannels();
     return channel;
   }
 
@@ -51,6 +52,7 @@ export default class EventEmitter {
       client.socket.send(`${channelId} closed.`);
     }
     this.channels.delete(channelId);
+    this.refreshChannels();
   };
 
 
@@ -72,6 +74,7 @@ export default class EventEmitter {
 
     if (!channel!.listeners.get(clientId)) channel.listeners.set(clientId, client.socket);
     client.socket.send(`joined ${channelId}`);
+    this.refreshChannels();
   }
 
   public removeClientFromChannel = (channelId: string, clientId: string) => {
@@ -86,13 +89,16 @@ export default class EventEmitter {
     }));
     channel.listeners.delete(clientId);
     channel.disconnectCallbacks.forEach(cb => cb(clientId));
+    this.refreshChannels();
   }
 
   public removeClient = (clientId: string) => {
     for (const channel of this.channels.values()) {
       channel.listeners.delete(clientId);
     }
+    this.clients.get(clientId)?.socket.close();
     this.clients.delete(clientId);
+    this.refreshChannels();
   }
 
   public connectCallbacks: (packetCallback)[] = [];
@@ -114,5 +120,15 @@ export default class EventEmitter {
     if (channel) {
       this.sender.add(packet, channel, clientToSendTo);
     } else throw new Error(`Channel "${packet.to}" does not exist!`);
+  }
+
+  public refreshChannels = () => {
+    const channels = Array.from(this.channels.values()).map(c => ({ id: c.id, listeners: c.listeners.size, createdAt: c.createdAt, lastMessage: c.lastMessage }));
+    
+    this.clients.forEach(c => {
+      if (c.channelListSubscriber && c.socket.OPEN) {
+        c.socket.send(JSON.stringify({event: 'channels', message: channels}))
+      }
+    })
   }
 }

@@ -19,7 +19,8 @@ module.exports = {
           100: '#190419'
         },
         white: '#FCFCFC',
-        green: '#005B1D'
+        green: '#005B1D',
+        lightBlue: '#389c9c'
       }, {
         interval: 5,
       }),

@@ -1,5 +1,5 @@
 import { createContext, FunctionComponent } from 'preact';
-import { StateUpdater, useState } from 'preact/hooks';
+import { StateUpdater, useContext, useState } from 'preact/hooks';
 
 export const ChannelContext = createContext<[string, StateUpdater<string>]>([
   '',
@@ -17,3 +17,5 @@ export const ChannelProvider: FunctionComponent = ({children}) => {
     </ChannelContext.Provider>
   )
 }
+
+export const useChannelContext = () => useContext(ChannelContext);

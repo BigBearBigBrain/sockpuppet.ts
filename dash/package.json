@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/date-fns": "^2.6.0",
+    "date-fns": "^2.29.3",
     "preact": "^10.11.3"
   },
   "devDependencies": {

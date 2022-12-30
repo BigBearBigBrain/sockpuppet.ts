@@ -15,8 +15,17 @@
     @apply h-min px-2 py-1 rounded-lg shadow-lg text-white
   }
 
+  a {
+    @apply hover:text-lightBlue transition-colors duration-300 underline
+  }
+
   dialog[open] {
-    @apply bg-green
+    @apply bg-green;
+    animation: dialogopen cubic-bezier(0.175, 0.885, 0.32, 1.275) 300ms forwards;
+  }
+  dialog[open].shrink {
+    @apply bg-green;
+    animation: dialogclose ease 300ms forwards;
   }
 }
 
@@ -83,5 +92,22 @@
   100% {
     background-size: 500% 500%;
     background-position: top right;
+  }
+}
+
+@keyframes dialogopen {
+  from {
+    scale: 0;
+  }
+  to {
+    scale: 1;
+  }
+}
+@keyframes dialogclose {
+  from {
+    scale: 1;
+  }
+  to {
+    scale: 0;
   }
 }

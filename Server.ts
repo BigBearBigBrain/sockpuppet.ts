@@ -32,9 +32,12 @@ export class SocketServer extends EventEmitter {
 
   private showDash: boolean;
 
+  private startTime = Date.now();
+  private totalMessages = 0;
+
   Run = () => {
     /** websocket echo server */
-    console.log(`Sockpuppet is running on :${this.port}`);
+    console.log(`Sockpuppet is running on ${this.hostname}:${this.port}`);
 
     serve(async (req) => {
       if (req.headers.get('upgrade') === 'websocket') {
@@ -71,17 +74,19 @@ export class SocketServer extends EventEmitter {
     const headers = new Headers(req.headers);
     headers.set('Content-Type', getMime(path))
 
-    const res = new Response(file!.readable, {headers});
+    const res = new Response(file!.readable, { headers });
     return res;
   }
 
   handleWs = (sock: WebSocket) => {
     const client = this.createClient(crypto.randomUUID(), sock);
+
     sock.onopen = () => {
       setTimeout(() => sock.send('ping'), 2000)
     }
 
     sock.onmessage = async (ev) => {
+      this.totalMessages++;
       try {
         if (typeof ev.data === "string") {
           // text message.
@@ -119,15 +124,31 @@ export class SocketServer extends EventEmitter {
         client.socket.send('pong');
         break;
       case "pong": {
+        this.totalMessages--;
         const packet = new Packet(client, 'pong');
         this.transmitter.handlePacket(packet);
+        // console.log(this.clients);
         break;
       }
       case "test":
         client.socket.send(`Server started on ${this.hostname}:${this.port}`);
         break;
-      case "channels":
-        client.socket.send(JSON.stringify(Array.from(this.channels.values()).map(c => ({id: c.id, listeners: c.listeners.size}))));
+      case "channels": {
+        const packet = new Packet(client, 'channels');
+        packet.message = Array.from(this.channels.values()).map(c => ({ id: c.id, listeners: c.listeners.size, createdAt: c.createdAt, lastMessage: c.lastMessage }));
+        this.transmitter.handlePacket(packet);
+      }
+        break;
+      case "meta": {
+        this.totalMessages--;
+        const packet = new Packet(client, 'meta')
+        packet.message = {
+          serverStart: this.startTime,
+          listeners: this.clients.size,
+          totalMessages: this.totalMessages
+        },
+        this.transmitter.handlePacket(packet);
+      }
         break;
       default:
         return await this.handleMessageAsJson(client, message);
@@ -152,6 +173,7 @@ export class SocketServer extends EventEmitter {
         json.connect_to.forEach((channelId: string) => {
           try {
             this.addClientToChannel(channelId, client.id)
+            client.listeningTo.push(channelId)
             client.socket.send(`Connected to ${channelId}`);
           } catch (e) {
             client.socket.send(e.message);
@@ -164,6 +186,7 @@ export class SocketServer extends EventEmitter {
         json.disconnect_from.forEach((channelId: string) => {
           try {
             this.removeClientFromChannel(channelId, client.id);
+            client.listeningTo.filter(cid => cid !== channelId)
             client.socket.send(`Disconnected from ${channelId}`);
           } catch (e) {
             client.socket.send(e.message);

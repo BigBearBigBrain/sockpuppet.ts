@@ -2,6 +2,8 @@ import { packetCallback, disconnectCallback } from './callbackType.ts';
 
 export default class Channel {
   public id: string;
+  public createdAt = Date.now();
+  public lastMessage?: number;
 
   public listeners: Map<string, WebSocket>;
 
@@ -14,6 +16,8 @@ export default class Channel {
     this.listeners = new Map();
 
     this.callbacks.push((packet) => {
+      this.lastMessage = Date.now();
+      
       for (const [clientId, listener] of this.listeners.entries()) {
         if (clientId !== packet.from.id || packet.echo)
           listener.send(JSON.stringify({

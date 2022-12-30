@@ -10,7 +10,9 @@ const RESERVED_EVENT_NAMES = [
   "disconnect",
   "error",
   "pong",
-  "reconnect"
+  "reconnect",
+  "channels",
+  "meta"
 ]
 
 export default class Transmitter {
@@ -36,7 +38,7 @@ export default class Transmitter {
     if (RESERVED_EVENT_NAMES.includes(packet.to)) {
       return this.handleReservedEvent(packet);
     }
-    
+
     const channel: Channel | undefined = this.server.channels.get(packet.to);
     if (channel) {
       if (!(channel as Channel).listeners.has((packet.from as Client).id)) throw new Error(`Client ${packet.from.id} is not subscribed to "${packet.to}"`)
@@ -68,17 +70,30 @@ export default class Transmitter {
 
       case "pong":
         if (packet.from instanceof Client) {
-          const client = this.server.clients.get(packet.from.id);
+          let client = this.server.clients.get(packet.from.id);
           if (!client) {
-            if (packet.from instanceof Client) {
-              this.server.createClient(packet.from.id, packet.from.socket);
-              this.hydrateClient(packet.from.id);
-            }
-            // TODO: cleanup this spaghetti
-          } else if (!client.pongReceived || !client.heartbeat) {
+            client = this.server.createClient(packet.from.id, packet.from.socket);
+          }
+          if (!client.pongReceived || !client.heartbeat) {
             this.hydrateClient(packet.from.id);
           }
         }
+        break;
+      case "channels":
+        if (packet.from instanceof Client) {
+          packet.from.channelListSubscriber = true;
+          packet.from.socket.send(JSON.stringify({
+            message: packet.message,
+            event: 'channels'
+          }));
+        }
+        break;
+      case "meta":
+        if (packet.from instanceof Client)
+          packet.from.socket.send(JSON.stringify({
+            message: packet.message,
+            event: 'meta'
+          }))
         break;
 
       case "reconnect":
@@ -93,9 +108,9 @@ export default class Transmitter {
   public hydrateClient = (clientId: string): void => {
     if (this.reconnect) {
       const client = this.server.clients.get(clientId);
-      if (client && !client.pongReceived) {
+      if (client) {
         client.pongReceived = true;
-        client.heartbeat = this.startHeartbeat(clientId);
+        !client.heartbeat && (client.heartbeat = this.startHeartbeat(clientId));
       }
     }
   }
