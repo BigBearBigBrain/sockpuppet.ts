@@ -27,11 +27,15 @@
     @apply bg-green;
     animation: dialogclose ease 300ms forwards;
   }
+
+  var {
+    @apply text-lightBlue bg-grizzly-150;
+  }
 }
 
 @layer utilities {
   .pane-gradient {
-    @apply via-yellow-300/20;
+    @apply via-purple-0/20;
     background-color: white;
     background-image:
     radial-gradient(farthest-corner at 70% 90%, var(--tw-gradient-stops));
@@ -44,7 +48,7 @@
   }
 
   .etched {
-    @apply dark:bg-grizzly-100/50 bg-grizzly-100/10 rounded-lg border border-t-purple-100/10 border-l-purple-100/10 border-b-white/10 border-r-white/10
+    @apply dark:bg-grizzly-100/50 bg-white/50 rounded-lg border border-t-purple-100/10 border-l-purple-100/10 border-b-white/10 border-r-white/10
   }
 
   .light-pane {
@@ -61,7 +65,7 @@
 @layer components {
   .pane {
     /* @apply bg-gradient-to-r from-grizzly-90 to-purple-50/40 p-8 rounded-lg shadow-lg; */
-    @apply dark:to-grizzly-85 dark:from-purple-95 to-grizzly-0/20 from-purple-0/20 p-8 rounded-lg shadow-lg border-2 light-pane dark:dark-pane pane-gradient dark:dark-pane-gradient;
+    @apply dark:to-grizzly-85 dark:from-purple-95 to-grizzly-0/20 from-yellow-400/20 p-8 rounded-lg shadow-lg border-2 light-pane dark:dark-pane pane-gradient dark:dark-pane-gradient;
     /* @apply p-8 rounded-lg shadow-lg; */
     /* radial-gradient(farthest-corner at top right, var(--tw-gradient-stops)); */
     /* background-position: top 0 left 0; */

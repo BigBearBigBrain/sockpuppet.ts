@@ -1,6 +1,7 @@
 import { createContext, FunctionComponent } from 'preact';
 import { useCallback, useContext, useEffect, useRef, useState } from 'preact/hooks';
-import { useChannels } from './channel';
+import { channelCallback } from './callbackTypes';
+import { Channel, useChannels } from './channel';
 import { Message } from './message';
 
 type puppetAction = (...args: any) => void;
@@ -22,7 +23,9 @@ interface IContext {
   socketReady: boolean;
   meta?: IMetadata;
   __sendRawMessage?: puppetAction;
-  joinChannel: puppetAction;
+  joinChannel: <T>(id: string, handler: channelCallback<T>) => void;
+  leaveChannel: puppetAction;
+  channels?: Record<string, Channel>
 }
 
 const TheaterContext = createContext<IContext>({
@@ -30,6 +33,7 @@ const TheaterContext = createContext<IContext>({
   channelList: [],
   socketReady: false,
   joinChannel: () => null,
+  leaveChannel: () => null,
 });
 
 interface IProps {
@@ -53,7 +57,7 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
   const [channelList, setChannelList] = useState<channelListItem[]>([]);
   const [meta, setMeta] = useState<IMetadata>();
 
-  const { channels, newChannel } = useChannels();
+  const { channels, newChannel, removeChannel } = useChannels();
 
   const [socket, setSocket] = useState<WebSocket>();
 
@@ -66,7 +70,6 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
   }, [socket])
 
   const handleMessage = useCallback((message: MessageEvent<string>) => {
-    // console.log(message.data);
     switch (message.data) {
       case "open":
       case "connected":
@@ -82,30 +85,33 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
         }
         break;
       default:
-        // try {
-        const msg = new Message(JSON.parse(message.data));
-        if (msg.event === 'channels') {
-          setChannelList(msg.message as unknown as channelListItem[]);
+        try {
+          const msg = new Message(JSON.parse(message.data));
+          if (msg.event === 'channels') {
+            return setChannelList(msg.message as unknown as channelListItem[]);
+          }
+          if (msg.event === 'meta') {
+            return setMeta(msg.message as unknown as IMetadata);
+          }
+          // callbacks.get('message')?.forEach(cb => cb(msg));
+          // if (msg.event === 'leave')
+          //   deleteChannel(msg.to);
+          // if (msg.event === 'join')
+          //   channels.get(msg.to)?.execJoinListeners();
+          // if (msg.event === 'create')
+          //   onChannelCreate(msg)
+          // callbacks.get(msg.event || msg.message)?.forEach(cb => cb(msg));
+          if (!channels![msg.to]) throw 'blech';
+          channels![msg.to]?.execListeners(msg.message);
+        } catch (_e) {
+          const msg = message.data;
+          // callbacks.get(msg)?.forEach(cb => cb(msg));
+          console.log(msg,_e);
         }
-        if (msg.event === 'meta') {
-          setMeta(msg.message as unknown as IMetadata);
-        }
-        // callbacks.get('message')?.forEach(cb => cb(msg));
-        // if (msg.event === 'leave')
-        //   deleteChannel(msg.to);
-        // if (msg.event === 'join')
-        //   channels.get(msg.to)?.execJoinListeners();
-        // if (msg.event === 'create')
-        //   onChannelCreate(msg)
-        // callbacks.get(msg.event || msg.message)?.forEach(cb => cb(msg));
-        // channels.get(msg.to)?.execListeners(msg.message);
-        // } catch (_e) {
-        //   const msg = message.data;
-        //   callbacks.get(msg)?.forEach(cb => cb(msg));
-        // }
+
         break;
     }
-  }, [socket])
+  }, [socket, channels])
 
   useEffect(() => {
     if (socket) {
@@ -122,7 +128,7 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
       setSocket(socket);
 
       return () => {
-        socket.close();
+        // socket.close();
         socket.removeEventListener('message', handleMessage);
         socket.removeEventListener('open', openListener);
       }
@@ -138,9 +144,22 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
     setSocket(socket);
   }, [host, setSocket]);
 
-  const joinChannel = useCallback((id: string) => {
-    if (socket)
-      newChannel(id, socket);
+  const joinChannel = useCallback(<T,>(id: string, handler: channelCallback<T>) => {
+    if (socket) {
+      socket.send(JSON.stringify({
+        'connect_to': [id]
+      }));
+      newChannel(id, socket, handler);
+    }
+  }, [socket, newChannel]);
+
+  const leaveChannel = useCallback((id: string) => {
+    if (socket) {
+      socket.send(JSON.stringify({
+        'disconnect_from': [id]
+      }));
+      removeChannel(id);
+    }
   }, [socket, newChannel]);
 
   return (
@@ -150,7 +169,9 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
       socketReady: socket?.readyState === 1,
       meta,
       __sendRawMessage: allowRaw ? __sendRawMessage : undefined,
-      joinChannel
+      joinChannel,
+      leaveChannel,
+      channels
     }}>
       {children}
     </TheaterContext.Provider>

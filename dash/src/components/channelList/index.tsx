@@ -1,12 +1,12 @@
 import { FunctionComponent } from 'preact'
-import { useCallback, useContext, useEffect, useRef, useState } from 'preact/hooks'
-import { ChannelContext } from '../../context/channel';
+import { useState } from 'preact/hooks'
+import { useChannelContext } from '../../context/channel';
 import { useSockpuppet } from '../../sockpuppet';
 import { Modal } from '../modal';
 
 export const ChannelList: FunctionComponent = () => {
   const { channelList: channels } = useSockpuppet();
-  const [channel, setChannelId] = useContext(ChannelContext);
+  const [channel, setChannelId] = useChannelContext();
   const [showModal, setShowModal] = useState(false);
 
   return (

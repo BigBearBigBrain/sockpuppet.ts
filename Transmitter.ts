@@ -125,7 +125,7 @@ export default class Transmitter {
     "Heartbeat"
     if (client) {
       if (client.pongReceived) {
-        client.socket.send('ping');
+        client.socket.OPEN && client.socket.send('ping');
         client.pongReceived = false;
       } else {
         setTimeout(() => this.timeoutPing(clientId), this.pingTimeout);

@@ -1,9 +1,13 @@
-import { useState } from 'preact/hooks';
+import { useCallback, useState } from 'preact/hooks';
 
-type useInput = [string, {
-  value: string,
-  onInput: (e: Event) => void
-}]
+type useInput = [
+  string,
+  {
+    value: string,
+    onInput: (e: Event) => void,
+  },
+  () => void
+]
 
 export const useInput = (initial: string): useInput => {
   const [value, setValue] = useState(initial);
@@ -12,6 +16,10 @@ export const useInput = (initial: string): useInput => {
     value,
     onInput: (e: Event) => setValue((e.target as HTMLInputElement)?.value)
   }
-  
-  return [value, bind]
+
+  const reset = useCallback(() => {
+    setValue(initial)
+  }, [setValue, initial])
+
+  return [value, bind, reset];
 }

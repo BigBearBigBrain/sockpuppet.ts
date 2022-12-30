@@ -20,13 +20,10 @@ export const Modal: FunctionComponent<IProps> = ({ children, show, setShow }) =>
       (e as MouseEvent).clientX <= rect.left + rect.width
     );
 
-    console.log(e.type);
-
     if (
       !ref.current?.classList.contains('shrink') &&
       (e.type === 'close' || !clickedInDialog)
     ) {
-      console.log(e.cancelable);
       e.stopImmediatePropagation();
       ref.current?.classList.add('shrink');
       setTimeout(() => {

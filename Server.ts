@@ -82,7 +82,7 @@ export class SocketServer extends EventEmitter {
     const client = this.createClient(crypto.randomUUID(), sock);
 
     sock.onopen = () => {
-      setTimeout(() => sock.send('ping'), 2000)
+      setTimeout(() => sock.readyState === 1 && sock.send('ping'), 2000)
     }
 
     sock.onmessage = async (ev) => {
