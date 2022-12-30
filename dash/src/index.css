@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Open Sans', sans-serif;
+  }
+
+  body {
+    @apply dark:bg-grizzly-100 bg-white text-black dark:text-white
+  }
+
+  button {
+    @apply h-min px-2 py-1 rounded-lg shadow-lg
+  }
+
+  dialog[open] {
+    @apply bg-green
+  }
+}
+
+@layer components {
+  .pane {
+    /* @apply bg-gradient-to-r from-grizzly-90 to-purple-50/40 p-8 rounded-lg shadow-lg; */
+    @apply to-grizzly-90 from-purple-50/40 p-8 rounded-lg shadow-lg border-r border-b border-purple-100/30;
+    /* @apply p-8 rounded-lg shadow-lg; */
+    background-image:
+      radial-gradient(farthest-corner at 25% 25%, var(--tw-gradient-stops));
+      /* radial-gradient(farthest-corner at top right, var(--tw-gradient-stops)); */
+    /* background-position: top 0 left 0; */
+    background-attachment: fixed;
+    /* animation: floating-g 1s linear infinite forwards; */
+  }
+
+  .dash-card {
+    @apply bg-grizzly-100/70 rounded-lg flex flex-wrap gap-4 items-center justify-center
+  }
+}
+
+@keyframes floating-g {
+  0% {
+    background-position: top right;
+  }
+
+  50% {
+    background-position: bottom;
+  }
+
+  100% {
+    background-position: top right;
+  }
+}
