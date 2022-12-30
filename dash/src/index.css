@@ -35,7 +35,7 @@
   }
 
   .etched {
-    @apply border border-t-purple-100/10 border-l-purple-100/10 border-b-white/10 border-r-white/10
+    @apply dark:bg-grizzly-100/50 bg-grizzly-100/10 rounded-lg border border-t-purple-100/10 border-l-purple-100/10 border-b-white/10 border-r-white/10
   }
 
   .light-pane {
@@ -61,7 +61,7 @@
   }
 
   .dash-card {
-    @apply dark:bg-grizzly-100/50 bg-grizzly-100/10 rounded-lg flex flex-wrap gap-4 items-center justify-center etched
+    @apply flex flex-wrap gap-4 items-center justify-center etched
   }
 }
 
