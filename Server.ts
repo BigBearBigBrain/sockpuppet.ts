@@ -7,15 +7,21 @@ import { Packet } from './Packet.ts';
 import Transmitter from './Transmitter.ts';
 import ITransmitterOptions from './ITransmitterOptions.ts';
 import Channel from './Channel.ts'
+import { getMime } from "./utils/getMime.ts";
+
+interface PuppetOptions {
+  dashboard?: boolean;
+}
 
 export class SocketServer extends EventEmitter {
   protected PermanentChannels: Map<string, Channel> = new Map();
 
-  constructor(options: Deno.ListenOptions, transmitterOptions?: ITransmitterOptions) {
+  constructor(options: Deno.ListenOptions & PuppetOptions, transmitterOptions?: ITransmitterOptions) {
     super();
     this.port = options.port;
     this.hostname = options.hostname;
     this.transmitter = new Transmitter(this, transmitterOptions);
+    this.showDash = options.dashboard ?? true;
     this.Run();
   }
 
@@ -24,11 +30,13 @@ export class SocketServer extends EventEmitter {
 
   public transmitter: Transmitter;
 
+  private showDash: boolean;
+
   Run = () => {
     /** websocket echo server */
     console.log(`Sockpuppet is running on :${this.port}`);
 
-    serve((req) => {
+    serve(async (req) => {
       if (req.headers.get('upgrade') === 'websocket') {
         try {
           const { response, socket } = Deno.upgradeWebSocket(req, { idleTimeout: 0 });
@@ -39,14 +47,33 @@ export class SocketServer extends EventEmitter {
           return new Response('There was an error while upgrading the socket\n' + err, { status: 500 });
         }
       } else if (this.handleNonWS) {
-        return this.handleNonWS(req);
+        return await this.handleNonWS(req);
       } else {
         return new Response(this.handleNonWS ? 'Resource not found' : 'Request is not upgradable', { status: this.handleNonWS ? 404 : 400 });
       }
     }, { hostname: this.hostname, port: this.port || 5038 })
   }
 
-  handleNonWS?: (req: Request) => Response;
+  handleNonWS?: (req: Request) => Promise<Response> = async (req) => {
+    if (!this.showDash) return new Response('Dashboard is disabled')
+    const url = new URL(req.url);
+    let path = decodeURIComponent(url.pathname);
+
+    if (path === '/') path = '/index.html'
+
+    let file;
+    try {
+      file = await Deno.open('./dash/dist' + path, { read: true });
+    } catch {
+      return new Response('Resource not found');
+    }
+
+    const headers = new Headers(req.headers);
+    headers.set('Content-Type', 'text/' + getMime(path))
+
+    const res = new Response(file!.readable, {headers});
+    return res;
+  }
 
   handleWs = (sock: WebSocket) => {
     const client = this.createClient(crypto.randomUUID(), sock);
