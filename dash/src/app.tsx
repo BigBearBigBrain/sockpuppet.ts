@@ -9,6 +9,12 @@ import { Header } from './components/header/header'
 
 export function App() {
 
+  useEffect(() => {
+    document.addEventListener('contextmenu', (e) => {
+      if (!import.meta.env.DEV) e.preventDefault();
+    })
+  }, [])
+
   return (
     <div class="grid grid-cols-4 gap-8 p-8 w-[100vw] h-[100vh] grid-rows-layout">
       <PuppetTheater
@@ -29,7 +35,7 @@ export function App() {
           </main>
         </ChannelProvider>
       </PuppetTheater>
-      <p className="fixed text-white bottom-0 dark:invisible">You use light mode in your browser and I hate you. If you hate the way this looks, change your browser settings because I don't care enough to make it look good</p>
+      <p className="fixed text-white bottom-0 dark:invisible">You use light mode in your browser and I hate you. If you hate the way this looks, change your browser settings because I don&apos;t care enough to make it look good</p>
     </div>
   )
 }

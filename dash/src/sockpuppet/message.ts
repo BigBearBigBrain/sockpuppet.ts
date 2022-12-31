@@ -7,6 +7,7 @@ export class Message<T = string> {
 
   status?: 'SUCCESS' | 'FAILED';
   channelId?: string;
+  receivedAt = Date.now();
   constructor(m: Message<T>) {
     this.to = m.to;
     this.from = m.from;

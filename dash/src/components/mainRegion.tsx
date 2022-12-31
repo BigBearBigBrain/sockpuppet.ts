@@ -1,8 +1,10 @@
+import { format } from 'date-fns';
 import { FunctionComponent } from 'preact';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { useChannelContext } from '../context/channel';
 import { useInput } from '../hooks/input';
 import { useSockpuppet } from '../sockpuppet';
+import { Message } from '../sockpuppet/message';
 import { Dashboard } from './dashboard';
 
 export const MainRegion: FunctionComponent = () => {
@@ -10,13 +12,15 @@ export const MainRegion: FunctionComponent = () => {
   const [channelId] = useChannelContext();
   const [message, bindMessage, resetMessage] = useInput('');
 
-  const [messages, setMessages] = useState<string[]>([]);
+  const [showFullMessage, setShowFullMessage] = useState(true);
+
+  const [messages, setMessages] = useState<[string, Message][]>([]);
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (channelId) {
-      joinChannel<string>(channelId, (msg) => {
-        setMessages(old => [...old, msg])
+      joinChannel<string>(channelId, (msg, packet) => {
+        setMessages(old => [...old, [msg, packet]])
       });
 
       return () => {
@@ -48,22 +52,22 @@ export const MainRegion: FunctionComponent = () => {
         <div class="grid grid-cols-2 grid-rows-2 gap-4">
           <div>
             <h3 className="font-bold">Connect to this channel</h3>
-            <pre class="w-full whitespace-pre-wrap">{JSON.stringify({
+            <pre class="w-full whitespace-pre-wrap etched p-2 mt-2">{JSON.stringify({
               'connect_to': [channelId],
             }, null, 2)}</pre>
           </div>
           <div>
             <h3 className="font-bold">Disconnect from this channel</h3>
-            <pre class="w-full whitespace-pre-wrap">{JSON.stringify({
+            <pre class="w-full whitespace-pre-wrap etched p-2 mt-2">{JSON.stringify({
               'disconnect_from': [channelId],
             }, null, 2)}</pre>
           </div>
           <div>
             <h3 className="font-bold">Create this channel</h3>
-            <p className="text-sm">Channels created from the client automatically close after all clients leave the channel unless <var>keep</var> is set to true</p>
-            <pre class="w-full whitespace-pre-wrap">{JSON.stringify({
+            <p className="text-sm">Channels created from the client automatically close after all clients leave the channel unless the <var>keep</var> property is set to true</p>
+            <pre class="w-full whitespace-pre-wrap etched p-2 mt-2">{JSON.stringify({
               'create_channel': channelId,
-              keep: false
+              // keep: false
             }, null, 2)}</pre>
           </div>
         </div>
@@ -72,7 +76,10 @@ export const MainRegion: FunctionComponent = () => {
         <div class="h-full overflow-y-scroll max-h-[calc(100vh-410px)]" ref={ref}>
           <ul class="flex justify-end w-full flex-col h-full">
             {messages.map(m => (
-              <li class="p-4 border-b border-purple-50 last:border-none w-full">{m}</li>
+              <li key={m[1].receivedAt + m[0]} class="p-4 border-b border-purple-50 last:border-none w-full flex gap-4">
+                <span>{format(m[1].receivedAt, 'HH:mm')}</span>
+                {showFullMessage ? <pre>{JSON.stringify(m[1], null, 2)}</pre> : <span>{m[0]}</span>}
+              </li>
             ))}
           </ul>
         </div>
@@ -82,9 +89,9 @@ export const MainRegion: FunctionComponent = () => {
       </div>
       <div class="etched p-4">
         <h2 class="text-2xl font-extrabold">Packet Composition</h2>
-        <p class="text-sm">If you are not using the an official Sockpuppet client library, you can send the following JSON string directly to your Sockpuppet server.</p>
+        {/* <p class="text-sm">If you are not using the an official Sockpuppet client library, you can send the following JSON string directly to your Sockpuppet server.</p> */}
         <hr class="border-purple-50 my-4" />
-        <pre class="w-full whitespace-pre-wrap">{JSON.stringify({
+        <pre class="w-full whitespace-pre-wrap etched p-2 mt-2">{JSON.stringify({
           'send_packet': {
             to: channelId,
             message

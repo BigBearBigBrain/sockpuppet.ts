@@ -5,6 +5,7 @@
 @layer base {
   html {
     font-family: 'Open Sans', sans-serif;
+    user-select: none;
   }
 
   body {
@@ -30,6 +31,10 @@
 
   var {
     @apply text-lightBlue bg-grizzly-150;
+  }
+
+  pre {
+    user-select: text
   }
 }
 

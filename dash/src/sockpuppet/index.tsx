@@ -91,6 +91,7 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
       default:
         try {
           const json = JSON.parse(message.data)
+          console.log(json);
           const msg = new Message(json);
           if (msg.event === 'channels') {
             return setChannelList(msg.message as unknown as channelListItem[]);
