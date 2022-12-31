@@ -9,6 +9,8 @@ export const ChannelList: FunctionComponent = () => {
   const [channel, setChannelId] = useChannelContext();
   const [showModal, setShowModal] = useState(false);
 
+  console.log(channels);
+
   return (
     <>
       <div class="h-full p-2">
@@ -16,11 +18,12 @@ export const ChannelList: FunctionComponent = () => {
           <h3 class="uppercase font-bold mt-2">channels</h3>
           <button class="bg-green" onClick={() => setShowModal(true)}>Create Channel</button>
         </div>
+        {channels.length > 1 && !channels[0].id && <p className="text-sm">This is a legacy server that does not support the dashboard, functionality is limited</p>}
         <hr class="border-purple-50 my-4" />
         <ul class="flex flex-col gap-2">
           {channels.map(c => (
-            <li onClick={() => setChannelId(c.id)} class="etched flex justify-between p-4 hover:bg-white/20 bg-black/10 rounded-md cursor-pointer transition-bg duration-300">
-              <span>{c.id}</span>
+            <li key={c.id || c} onClick={() => setChannelId(c.id || c as unknown as string)} class="etched flex justify-between p-4 hover:bg-white/20 bg-black/10 rounded-md cursor-pointer transition-bg duration-300">
+              <span>{c.id || c}</span>
               <span>{c.listeners}</span>
             </li>
           ))}

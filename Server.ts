@@ -22,6 +22,18 @@ export class SocketServer extends EventEmitter {
     this.hostname = options.hostname;
     this.transmitter = new Transmitter(this, transmitterOptions);
     this.showDash = options.dashboard ?? true;
+
+    // if (this.showDash) {
+    //   try {
+    //     const files = Deno.readDirSync('./dash/dist')
+    //     for (const file of files) {
+    //       console.log(file.name);
+    //     }
+    //   } catch {
+        
+    //   }
+    // }
+    
     this.Run();
   }
 

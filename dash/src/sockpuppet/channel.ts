@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'preact/hooks';
-import { channelCallback } from './callbackTypes';
+import { channelCallback, Packet } from './callbackTypes';
+import { Message } from './message';
 
 export class Channel<T = string> {
   public id: string;
@@ -30,7 +31,7 @@ export class Channel<T = string> {
     }));
   }
 
-  public execListeners = (message: T) => this.callbacks.get('message')?.forEach(cb => cb(message));
+  public execListeners = (message: T, packet: Message<T>) => this.callbacks.get('message')?.forEach(cb => cb(message, packet));
 }
 
 export const useChannels = () => {

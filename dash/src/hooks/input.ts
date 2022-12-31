@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'preact/hooks';
+import { StateUpdater, useCallback, useState } from 'preact/hooks';
 
 type useInput = [
   string,
@@ -6,7 +6,8 @@ type useInput = [
     value: string,
     onInput: (e: Event) => void,
   },
-  () => void
+  () => void,
+  StateUpdater<string>,
 ]
 
 export const useInput = (initial: string): useInput => {
@@ -21,5 +22,5 @@ export const useInput = (initial: string): useInput => {
     setValue(initial)
   }, [setValue, initial])
 
-  return [value, bind, reset];
+  return [value, bind, reset, setValue];
 }

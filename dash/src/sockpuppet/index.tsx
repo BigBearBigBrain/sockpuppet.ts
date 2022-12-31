@@ -25,7 +25,9 @@ interface IContext {
   __sendRawMessage?: puppetAction;
   joinChannel: <T>(id: string, handler: channelCallback<T>) => void;
   leaveChannel: puppetAction;
-  channels?: Record<string, Channel>
+  channels?: Record<string, Channel>;
+  host: string;
+  changeHost?: (host: string) => void;
 }
 
 const TheaterContext = createContext<IContext>({
@@ -34,6 +36,7 @@ const TheaterContext = createContext<IContext>({
   socketReady: false,
   joinChannel: () => null,
   leaveChannel: () => null,
+  host: location.origin.replace(/http/, 'ws'),
 });
 
 interface IProps {
@@ -48,12 +51,13 @@ interface IProps {
 export const PuppetTheater: FunctionComponent<IProps> = ({
   children,
   keepAlive = true,
-  host,
+  host: hostProp = location.origin.replace(/http/, 'ws'),
   onConnect,
   receivesChannelList,
   receivesMetadata,
   allowRaw
 }) => {
+  const [host, setHost] = useState(hostProp);
   const [channelList, setChannelList] = useState<channelListItem[]>([]);
   const [meta, setMeta] = useState<IMetadata>();
 
@@ -86,7 +90,8 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
         break;
       default:
         try {
-          const msg = new Message(JSON.parse(message.data));
+          const json = JSON.parse(message.data)
+          const msg = new Message(json);
           if (msg.event === 'channels') {
             return setChannelList(msg.message as unknown as channelListItem[]);
           }
@@ -101,18 +106,24 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
           // if (msg.event === 'create')
           //   onChannelCreate(msg)
           // callbacks.get(msg.event || msg.message)?.forEach(cb => cb(msg));
-          if (!channels![msg.to]) throw 'blech';
-          channels![msg.to]?.execListeners(msg.message);
+          if (!channels?.[msg.to]) {
+            if (Array.isArray(json)) {
+              setChannelList(json)
+            } else
+              throw "Cannot convert to message...";
+          }
+          channels?.[msg.to]?.execListeners(msg.message, msg);
         } catch (_e) {
           const msg = message.data;
           // callbacks.get(msg)?.forEach(cb => cb(msg));
-          console.log(msg,_e);
+          console.log('Server message:', msg);
         }
 
         break;
     }
-  }, [socket, channels])
+  }, [socket, channels, keepAlive])
 
+  // TODO - this is a nightmare, this should happen when the socket is openned, but it also needs to listen for handleMessage changes....
   useEffect(() => {
     if (socket) {
       const openListener = () => {
@@ -125,7 +136,7 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
       socket.addEventListener('message', handleMessage);
       socket.addEventListener('open', openListener);
 
-      setSocket(socket);
+      // setSocket(socket);
 
       return () => {
         // socket.close();
@@ -140,7 +151,7 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
   }, [socket])
 
   useEffect(() => {
-    const socket = new WebSocket(host || location.origin.replace(/http/, 'ws'));
+    const socket = new WebSocket(host);
     setSocket(socket);
   }, [host, setSocket]);
 
@@ -160,7 +171,11 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
       }));
       removeChannel(id);
     }
-  }, [socket, newChannel]);
+  }, [socket, removeChannel]);
+
+  const changeHost = useCallback((host: string) => {
+    setHost(host);
+  }, [])
 
   return (
     <TheaterContext.Provider value={{
@@ -171,7 +186,9 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
       __sendRawMessage: allowRaw ? __sendRawMessage : undefined,
       joinChannel,
       leaveChannel,
-      channels
+      channels,
+      host,
+      changeHost
     }}>
       {children}
     </TheaterContext.Provider>

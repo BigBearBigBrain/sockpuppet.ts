@@ -4,25 +4,21 @@ import { ChannelProvider } from './context/channel'
 import { ChannelList } from './components/channelList'
 import { PuppetTheater } from './sockpuppet'
 import { MainRegion } from './components/mainRegion'
+import { useEffect } from 'preact/hooks'
+import { Header } from './components/header/header'
 
 export function App() {
 
   return (
     <div class="grid grid-cols-4 gap-8 p-8 w-[100vw] h-[100vh] grid-rows-layout">
-      <header class="pane col-span-4 flex items-center">
-        <img class="h-16 mx-4" src="/sockpuppet-solo.svg" alt="Sockpuppet logo" />
-        <div >
-          <h1 class="text-5xl uppercase font-extrabold font-permanent-marker">Puppetshow</h1>
-          <p>Powered by <a href="https://deno.land/x/sockpuppet" target="_blank">Sockpuppet</a></p>
-        </div>
-      </header>
       <PuppetTheater
         allowRaw
         receivesChannelList
         receivesMetadata
-        host="ws://localhost:5038"
+        host={import.meta.env.NODE_ENV === "development" ? "ws://localhost:5038" : undefined}
       >
         <ChannelProvider>
+          <Header isInContainer={!!import.meta.env.IN_CONTAINER} />
           <aside class="pane">
             <ChannelList />
           </aside>
