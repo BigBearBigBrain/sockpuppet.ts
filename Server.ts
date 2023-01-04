@@ -8,9 +8,11 @@ import Transmitter from './Transmitter.ts';
 import ITransmitterOptions from './ITransmitterOptions.ts';
 import Channel from './Channel.ts'
 import { getMime } from "./utils/getMime.ts";
+import { Sockpuppet } from "./mod.ts";
 
 interface PuppetOptions {
   dashboard?: boolean;
+  dashboardVersion?: '1'
 }
 
 export class SocketServer extends EventEmitter {
@@ -30,10 +32,11 @@ export class SocketServer extends EventEmitter {
     //       console.log(file.name);
     //     }
     //   } catch {
-        
+
     //   }
     // }
-    
+
+
     this.Run();
   }
 
@@ -46,27 +49,35 @@ export class SocketServer extends EventEmitter {
 
   private startTime = Date.now();
   private totalMessages = 0;
+  static dashVersion = '1';
+  static readonly puppetVersion = '0.6'
 
   Run = () => {
-    /** websocket echo server */
-    console.log(`Sockpuppet is running on ${this.hostname}:${this.port}`);
-
-    serve(async (req) => {
-      if (req.headers.get('upgrade') === 'websocket') {
-        try {
-          const { response, socket } = Deno.upgradeWebSocket(req, { idleTimeout: 0 });
-          this.handleWs(socket);
-          return response;
-        } catch (err) {
-          console.error(`failed to accept websocket: ${err}`);
-          return new Response('There was an error while upgrading the socket\n' + err, { status: 500 });
+    try {
+      serve(async (req) => {
+        if (req.headers.get('upgrade') === 'websocket') {
+          try {
+            const { response, socket } = Deno.upgradeWebSocket(req, { idleTimeout: 0 });
+            this.handleWs(socket);
+            return response;
+          } catch (err) {
+            console.error(`failed to accept websocket: ${err}`);
+            return new Response('There was an error while upgrading the socket\n' + err, { status: 500 });
+          }
+        } else if (this.handleNonWS) {
+          return await this.handleNonWS(req);
+        } else {
+          return new Response(this.handleNonWS ? 'Resource not found' : 'Request is not upgradable', { status: this.handleNonWS ? 404 : 400 });
         }
-      } else if (this.handleNonWS) {
-        return await this.handleNonWS(req);
-      } else {
-        return new Response(this.handleNonWS ? 'Resource not found' : 'Request is not upgradable', { status: this.handleNonWS ? 404 : 400 });
+      }, { hostname: this.hostname, port: this.port || 5038 })
+
+      console.log(`Sockpuppet is running on ws://${this.hostname || 'localhost'}:${this.port}`);
+      if (this.showDash) {
+        console.log(`Sockpuppet dashboard is available on http://${this.hostname || 'localhost'}:${this.port}`);
       }
-    }, { hostname: this.hostname, port: this.port || 5038 })
+    } catch {
+      console.error('Error starting Sockpuppet');
+    }
   }
 
   handleNonWS?: (req: Request) => Promise<Response> = async (req) => {
@@ -147,7 +158,7 @@ export class SocketServer extends EventEmitter {
         break;
       case "channels": {
         const packet = new Packet(client, 'channels');
-        packet.message = Array.from(this.channels.values()).map(c => ({ id: c.id, listeners: c.listeners.size, createdAt: c.createdAt, lastMessage: c.lastMessage }));
+        packet.message = Array.from(this.channels.values()).map(c => ({ id: c.id, listeners: c.listeners.size, createdAt: c.createdAt, lastMessage: c.lastMessage, dashVersion: Sockpuppet.dashVersion }));
         this.transmitter.handlePacket(packet);
       }
         break;
@@ -155,10 +166,20 @@ export class SocketServer extends EventEmitter {
         this.totalMessages--;
         const packet = new Packet(client, 'meta')
         packet.message = {
+          dashVersion: Sockpuppet.dashVersion,
           serverStart: this.startTime,
           listeners: this.clients.size,
           totalMessages: this.totalMessages
         },
+          this.transmitter.handlePacket(packet);
+      }
+        break;
+      case 'handshake': {
+        this.totalMessages--;
+        const packet = new Packet(client, 'handshake');
+        packet.message = {
+          puppetVersion: Sockpuppet.puppetVersion
+        }
         this.transmitter.handlePacket(packet);
       }
         break;

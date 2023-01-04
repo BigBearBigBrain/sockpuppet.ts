@@ -1,5 +1,6 @@
 import { createContext, FunctionComponent } from 'preact';
 import { useCallback, useContext, useEffect, useRef, useState } from 'preact/hooks';
+import { useQueryParams } from '../hooks/useQueryParams';
 import { channelCallback } from './callbackTypes';
 import { Channel, useChannels } from './channel';
 import { Message } from './message';
@@ -15,6 +16,7 @@ interface IMetadata {
   serverStart: number;
   listeners: number;
   totalMessages: number;
+  dashVersion?: string;
 }
 
 interface IContext {
@@ -24,10 +26,12 @@ interface IContext {
   meta?: IMetadata;
   __sendRawMessage?: puppetAction;
   joinChannel: <T>(id: string, handler: channelCallback<T>) => void;
+  createChannel: (id: string) => void;
   leaveChannel: puppetAction;
   channels?: Record<string, Channel>;
   host: string;
   changeHost?: (host: string) => void;
+  resetSocket: puppetAction
 }
 
 const TheaterContext = createContext<IContext>({
@@ -35,7 +39,9 @@ const TheaterContext = createContext<IContext>({
   channelList: [],
   socketReady: false,
   joinChannel: () => null,
+  createChannel: () => null,
   leaveChannel: () => null,
+  resetSocket: () => null,
   host: location.origin.replace(/http/, 'ws'),
 });
 
@@ -51,7 +57,7 @@ interface IProps {
 export const PuppetTheater: FunctionComponent<IProps> = ({
   children,
   keepAlive = true,
-  host: hostProp = location.origin.replace(/http/, 'ws'),
+  host: hostProp = import.meta.env.IN_CONTAINER ? location.origin.replace(/http/, 'ws') : 'ws://localhost:5038',
   onConnect,
   receivesChannelList,
   receivesMetadata,
@@ -91,7 +97,7 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
       default:
         try {
           const json = JSON.parse(message.data)
-          console.log(json);
+          // console.log(json);
           const msg = new Message(json);
           if (msg.event === 'channels') {
             return setChannelList(msg.message as unknown as channelListItem[]);
@@ -117,7 +123,8 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
         } catch (_e) {
           const msg = message.data;
           // callbacks.get(msg)?.forEach(cb => cb(msg));
-          console.log('Server message:', msg);
+          // console.log('Server message:', msg);
+          if (msg.includes('meta')) setMeta(undefined);
         }
 
         break;
@@ -131,8 +138,8 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
         receivesChannelList && getChannels();
         receivesMetadata && getMeta();
         onConnect && onConnect();
-        (window as any).testsocket = (window as any).testsocket || [];
-        (window as any).testsocket.push(socket)
+        // (window as any).testsocket = (window as any).testsocket || [];
+        // (window as any).testsocket.push(socket)
       }
       socket.addEventListener('message', handleMessage);
       socket.addEventListener('open', openListener);
@@ -145,15 +152,18 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
         socket.removeEventListener('open', openListener);
       }
     }
-  }, [receivesChannelList, getChannels, receivesMetadata, getMeta, onConnect, handleMessage]);
+  }, [receivesChannelList, getChannels, receivesMetadata, getMeta, onConnect, handleMessage, socket]);
 
   const __sendRawMessage = useCallback((message: string) => {
     socket?.send(message);
   }, [socket])
 
   useEffect(() => {
-    const socket = new WebSocket(host);
-    setSocket(socket);
+    setSocket((old) => {
+      old?.close();
+
+      return new WebSocket(host);
+    });
   }, [host, setSocket]);
 
   const joinChannel = useCallback(<T,>(id: string, handler: channelCallback<T>) => {
@@ -178,6 +188,21 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
     setHost(host);
   }, [])
 
+  const resetSocket = useCallback(() => {
+    setSocket((old) => {
+      old?.close();
+
+      return new WebSocket(host);
+    });
+  }, [host])
+
+  const createChannel = useCallback((id: string) => {
+    if (!socket) return;
+    socket.send(JSON.stringify({
+      create_channel: id
+    }))
+  }, [socket])
+
   return (
     <TheaterContext.Provider value={{
       // getChannels,
@@ -189,7 +214,9 @@ export const PuppetTheater: FunctionComponent<IProps> = ({
       leaveChannel,
       channels,
       host,
-      changeHost
+      changeHost,
+      createChannel,
+      resetSocket
     }}>
       {children}
     </TheaterContext.Provider>

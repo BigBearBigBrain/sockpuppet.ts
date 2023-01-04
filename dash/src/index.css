@@ -13,7 +13,7 @@
   }
 
   button {
-    @apply h-min px-2 py-1 rounded-lg shadow-lg text-white
+    @apply h-min px-2 py-1 rounded-lg shadow-lg text-white disabled:opacity-50
   }
 
   a {
@@ -21,12 +21,14 @@
   }
 
   dialog[open] {
-    @apply bg-green;
+    @apply bg-gray-400 dark:bg-grizzly-100 rounded-lg shadow-lg text-black dark:text-white;
     animation: dialogopen cubic-bezier(0.175, 0.885, 0.32, 1.275) 300ms forwards;
   }
   dialog[open].shrink {
-    @apply bg-green;
     animation: dialogclose ease 300ms forwards;
+  }
+  dialog::backdrop {
+    @apply bg-purple-100/50
   }
 
   var {
@@ -35,6 +37,10 @@
 
   pre {
     user-select: text
+  }
+
+  input {
+    @apply rounded-lg p-4 text-black
   }
 }
 

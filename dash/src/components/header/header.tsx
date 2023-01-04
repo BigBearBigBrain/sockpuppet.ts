@@ -8,18 +8,20 @@ interface IProps {
 }
 
 export const Header: FunctionalComponent<IProps> = ({ isInContainer }) => {
-  // const [showHostUrl, setShowHostUrl] = useState(!process.env.IN_CONTAINER);
-  const { host, socketReady, changeHost } = useSockpuppet();
+  const { host, socketReady, changeHost, resetSocket } = useSockpuppet();
   const [currentHost, bindCurrentHost, _, setCurrentHost] = useInput(host);
-
   // useEffect(() => {
   //   setCurrentHost(host)
   // }, [host])
   const buttonText = host !== currentHost ? "connect" : socketReady ? "refresh connection" : "retry connection"
 
   const connect = useCallback(() => {
+    if (currentHost === host) {
+      resetSocket();
+      return
+    }
     changeHost && changeHost(currentHost);
-  }, [changeHost, currentHost]);
+  }, [changeHost, currentHost, host, resetSocket]);
 
   return (
     <header class="pane col-span-4 flex items-center justify-between">
@@ -38,7 +40,7 @@ export const Header: FunctionalComponent<IProps> = ({ isInContainer }) => {
           <p>{host}</p>
         ) : (
           <>
-            <input class="p-4 rounded-lg etched" type="text" {...bindCurrentHost} />
+            <input class="p-4 rounded-lg etched dark:text-white" type="text" {...bindCurrentHost} />
             <button onClick={connect} class="p-4 bg-purple-50 font-permanent-marker">{buttonText}</button>
           </>
         )}

@@ -67,7 +67,7 @@ There is now a Docker image available on Dockerhub that allows you to spin up a 
 - [x] Dynamic channel creation
 - [x] Channel middleware
 - [ ] Public test site
-- [X] Networks of channels
+- [ ] Networks of channels
 - [X] Network middleware
 - [ ] React Hooks Package
 - [ ] Angular Package

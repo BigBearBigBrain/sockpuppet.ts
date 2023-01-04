@@ -1,7 +1,6 @@
 import { socketCallback, channelCallback } from "./callbackTypes.ts";
 import { Channel } from "./Channel.ts";
 import { Message } from "./Message.ts";
-// 1.19.3
 
 interface PuppetOptions {
   keepAlive?: boolean;
@@ -17,11 +16,32 @@ export class Sockpuppet {
 
   private keepAlive = true;
 
+  private _versionMismatch?: boolean;
+  get versionMismatch () {
+    return this._versionMismatch;
+  }
+  private _handshakeAccepted = false;
+  get handshakeAccepted () {
+    return this._handshakeAccepted;
+  }
+  private handshakeCheckDelay = 4000;
+  private socketReady = false;
+
+  static readonly puppetVersion = '0.6'
+
   constructor(path: string, onConnect?: () => void, options?: PuppetOptions) {
     if (isFullUrl(path)) this.socket = new WebSocket(path)
     else this.socket = new WebSocket(`${window.location.host}${path}`);
 
     if (onConnect) this.socket.addEventListener('open', () => {
+      this.socket.send('handshake');
+      this.socketReady = true;
+      setTimeout(() => {
+        if (!this.handshakeAccepted && this.socketReady) {
+          this._versionMismatch = true;
+          console.warn(`Socket has connected successfully but did not receive a handshake. If the host is a Sockpuppet server, then it may be an older version that does not support handshakes. Consider upgrading the server to ${Sockpuppet.puppetVersion}`)
+        }
+      }, this.handshakeCheckDelay);
       onConnect();
     })
 
@@ -86,21 +106,36 @@ export class Sockpuppet {
       default:
         try {
           const msg = new Message(JSON.parse(message.data));
-          this.callbacks.get('message')?.forEach(cb => cb(msg));
-          if (msg.event === 'leave')
-            this.deleteChannel(msg.to);
-          if (msg.event === 'join')
-            this.channels.get(msg.to)?.execJoinListeners();
-          if (msg.event === 'create')
-            this.onChannelCreate(msg)
-          this.callbacks.get(msg.event || msg.message)?.forEach(cb => cb(msg));
-          this.channels.get(msg.to)?.execListeners(msg.message);
+          this.handleEvents(msg);
         } catch (_e) {
           const msg = message.data;
           this.callbacks.get(msg)?.forEach(cb => cb(msg));
         }
         break;
     }
+  }
+
+  private handleEvents = (message: Message) => {
+    switch (message.event) {
+      case 'leave':
+        this.deleteChannel(message.to);
+        break;
+      case 'join':
+        this.channels.get(message.to)?.execJoinListeners();
+        break;
+      case 'create':
+        this.onChannelCreate(message);
+        break;
+      case 'handshake': {
+        this._handshakeAccepted = true;
+        this._versionMismatch = (message as unknown as Message<{puppetVersion: string}>).message.puppetVersion < Sockpuppet.puppetVersion;
+        if (this._versionMismatch) console.warn('Sockpuppet server version is older than client. Functionality is limited');
+      }
+
+    }
+    this.callbacks.get(message.event || message.message)?.forEach(cb => cb(message));
+    this.channels.get(message.to)?.execListeners(message.message);
+
   }
 
   public leaveChannel = (channelId: string) =>

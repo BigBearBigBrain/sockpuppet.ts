@@ -8,11 +8,13 @@ import { Message } from '../sockpuppet/message';
 import { Dashboard } from './dashboard';
 
 export const MainRegion: FunctionComponent = () => {
-  const { joinChannel, leaveChannel, socketReady, channels } = useSockpuppet();
-  const [channelId] = useChannelContext();
+  const { joinChannel, leaveChannel, socketReady, channels, host } = useSockpuppet();
+  const [prevHost, setPrevHost] = useState(host);
+  const [channelId, setChannelId] = useChannelContext();
   const [message, bindMessage, resetMessage] = useInput('');
 
-  const [showFullMessage, setShowFullMessage] = useState(true);
+  const [showFullMessage, setShowFullMessage] = useState(false);
+  const [showJsonComposer, setShowJsonComposer] = useState(false);
 
   const [messages, setMessages] = useState<[string, Message][]>([]);
   const ref = useRef<HTMLDivElement>(null)
@@ -24,10 +26,24 @@ export const MainRegion: FunctionComponent = () => {
       });
 
       return () => {
-        // leaveChannel(channelId)
+        leaveChannel(channelId)
+        setMessages([]);
       }
     }
-  }, [channelId]);
+  }, [channelId, joinChannel, leaveChannel]);
+
+  
+  useEffect(() => {
+    setChannelId((channelId) => {
+      if (host !== prevHost && channelId) {
+        setMessages([]);
+        setPrevHost(host);
+        return '';
+      }
+      return channelId;
+    }
+    )
+  }, [host])
 
   const sendMessage = useCallback((e: Event) => {
     e.preventDefault();
@@ -36,7 +52,7 @@ export const MainRegion: FunctionComponent = () => {
       channel?.send(message);
       resetMessage()
     }
-  }, [channelId, message])
+  }, [channelId, channels, message, resetMessage])
 
   useEffect(() => {
     if (ref.current)

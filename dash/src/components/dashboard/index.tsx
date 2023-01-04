@@ -1,21 +1,14 @@
 import { FunctionComponent } from 'preact';
 import { useSockpuppet } from '../../sockpuppet';
-import {formatDistanceToNow, differenceInHours} from 'date-fns';
+import { formatDistanceToNow, differenceInHours } from 'date-fns';
 import { useEffect, useState } from 'preact/hooks';
 
 interface IProps {
   pollingRate?: number;
 }
 
-export const Dashboard: FunctionComponent<IProps> = ({pollingRate = 1000}) => {
-  const {meta, channelList, __sendRawMessage, socketReady} = useSockpuppet();
-
-  useEffect(() => {
-    if (socketReady && __sendRawMessage) {
-      const timer = setInterval(() => {__sendRawMessage('meta')}, pollingRate);
-      return () => clearInterval(timer);
-    }
-  }, [socketReady, __sendRawMessage, pollingRate]);
+export const DashboardV1: FunctionComponent<IProps> = ({ pollingRate = 1000 }) => {
+  const { meta, channelList } = useSockpuppet();
 
   return (
     <div class="w-full h-full grid grid-cols-4 grid-rows-4 gap-4">
@@ -41,7 +34,7 @@ export const Dashboard: FunctionComponent<IProps> = ({pollingRate = 1000}) => {
       </div>
       <div class="dash-card flex-col">
         <p className="text-xl">Oldest channel age:</p>
-        <span class="text-2xl font-extrabold">{formatDistanceToNow(channelList.sort((a,b) => a.createdAt - b.createdAt)[0]?.createdAt || 0)}</span>
+        <span class="text-2xl font-extrabold">{formatDistanceToNow(channelList.sort((a, b) => a.createdAt - b.createdAt)[0]?.createdAt || 0)}</span>
       </div>
       <div class="dash-card flex-col">
         <p className="text-xl">Uptime:</p>
@@ -51,5 +44,32 @@ export const Dashboard: FunctionComponent<IProps> = ({pollingRate = 1000}) => {
         <p class="text-2xl"><span class="font-extrabold">{meta?.totalMessages || 0}</span> messages since start</p>
       </div>
     </div>
+  )
+}
+
+const dashboardVersions = {
+  'default': () => <div>
+    Unable to establish connection to dashboard service. If you are not using a Sockpuppet server, this is expected. If you are using a Sockpuppet server, the server may be out of date, or the server is configured to not provide the dashboard
+  </div>,
+  '1': DashboardV1
+}
+
+export const Dashboard: FunctionComponent<IProps> = ({ pollingRate = 1000 }) => {
+  const { meta, __sendRawMessage, socketReady } = useSockpuppet();
+
+  useEffect(() => {
+    if (socketReady && __sendRawMessage) {
+      const timer = setInterval(() => {
+        __sendRawMessage('meta')
+        // console.log(meta);
+      }, pollingRate);
+      return () => clearInterval(timer);
+    }
+  }, [socketReady, __sendRawMessage, pollingRate]);
+
+
+  const Dash = dashboardVersions[(meta?.dashVersion || 'default') as keyof typeof dashboardVersions];
+  return (
+    <Dash />
   )
 }

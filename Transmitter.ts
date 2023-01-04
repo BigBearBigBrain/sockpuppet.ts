@@ -12,7 +12,8 @@ const RESERVED_EVENT_NAMES = [
   "pong",
   "reconnect",
   "channels",
-  "meta"
+  "meta",
+  "handshake"
 ]
 
 export default class Transmitter {
@@ -93,6 +94,13 @@ export default class Transmitter {
           packet.from.socket.send(JSON.stringify({
             message: packet.message,
             event: 'meta'
+          }))
+        break;
+      case "handshake":
+        if (packet.from instanceof Client)
+          packet.from.socket.send(JSON.stringify({
+            message: packet.message,
+            event: 'handshake'
           }))
         break;
 

@@ -1,6 +1,7 @@
 FROM node
 WORKDIR /dash
 COPY dash .
+ENV IN_CONTAINER=true
 RUN yarn build
 
 

@@ -6,8 +6,11 @@ import { PuppetTheater } from './sockpuppet'
 import { MainRegion } from './components/mainRegion'
 import { useEffect } from 'preact/hooks'
 import { Header } from './components/header/header'
+import { useQueryParams } from './hooks/useQueryParams'
 
 export function App() {
+  const [{ host }, paramsLoaded] = useQueryParams();
+  console.log(host);
 
   useEffect(() => {
     document.addEventListener('contextmenu', (e) => {
@@ -15,13 +18,13 @@ export function App() {
     })
   }, [])
 
-  return (
-    <div class="grid grid-cols-4 gap-8 p-8 w-[100vw] h-[100vh] grid-rows-layout">
+  return paramsLoaded ? (
+    <div class="grid grid-cols-4 gap-8 p-8 w-[100vw] h-[100vh] max-h-[100vh] grid-rows-layout">
       <PuppetTheater
         allowRaw
         receivesChannelList
         receivesMetadata
-        host={import.meta.env.NODE_ENV === "development" ? "ws://localhost:5038" : undefined}
+        host={import.meta.env.NODE_ENV === "development" && !host ? "ws://localhost:5038" : host}
       >
         <ChannelProvider>
           <Header isInContainer={!!import.meta.env.IN_CONTAINER} />
@@ -36,6 +39,10 @@ export function App() {
         </ChannelProvider>
       </PuppetTheater>
       <p className="fixed text-white bottom-0 dark:invisible">You use light mode in your browser and I hate you. If you hate the way this looks, change your browser settings because I don&apos;t care enough to make it look good</p>
+    </div>
+  ) : (
+    <div>
+      Puppetshow is initializing
     </div>
   )
 }

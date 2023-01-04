@@ -1,3 +1,6 @@
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-var-requires */
+
 const { lerpColors } = require('tailwind-lerp-colors');
 
 /** @type {import('tailwindcss').Config} */
@@ -20,7 +23,9 @@ module.exports = {
         },
         white: '#FCFCFC',
         green: '#005B1D',
-        lightBlue: '#389c9c'
+        lightBlue: '#389c9c',
+        red: '#630000',
+
       }, {
         interval: 5,
       }),
