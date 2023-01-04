@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 
-export const useQueryParams = () => {
+export const useQueryParams = (): [Record<string, string>, boolean] => {
   const [params, setParams] = useState<Record<string,string>>({});
   const [ready, setReady] = useState(false);
 
@@ -13,8 +13,8 @@ export const useQueryParams = () => {
         params[key] = value;
       }
       setParams(params);
-      setReady(true);
     }
+    setReady(true);
   }, [])
 
   return [params, ready];
