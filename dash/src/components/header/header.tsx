@@ -10,6 +10,7 @@ interface IProps {
 export const Header: FunctionalComponent<IProps> = ({ isInContainer }) => {
   const { host, socketReady, changeHost, resetSocket } = useSockpuppet();
   const [currentHost, bindCurrentHost, _, setCurrentHost] = useInput(host);
+  console.log(isInContainer);
   // useEffect(() => {
   //   setCurrentHost(host)
   // }, [host])
@@ -39,11 +40,9 @@ export const Header: FunctionalComponent<IProps> = ({ isInContainer }) => {
         {isInContainer ? (
           <p>{host}</p>
         ) : (
-          <>
-            <input class="p-4 rounded-lg etched dark:text-white" type="text" {...bindCurrentHost} />
-            <button onClick={connect} class="p-4 bg-purple-50 font-permanent-marker">{buttonText}</button>
-          </>
+          <input class="p-4 rounded-lg etched dark:text-white" type="text" {...bindCurrentHost} />
         )}
+        <button onClick={connect} class="p-4 bg-purple-50 font-permanent-marker">{buttonText}</button>
       </div>
     </header>
   );

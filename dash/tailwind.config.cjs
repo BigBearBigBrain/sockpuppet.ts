@@ -24,7 +24,11 @@ module.exports = {
         white: '#FCFCFC',
         green: '#005B1D',
         lightBlue: '#389c9c',
-        red: '#630000',
+        red: {
+          100: '#630000',
+          0: '#FB0000',
+        }
+
 
       }, {
         interval: 5,

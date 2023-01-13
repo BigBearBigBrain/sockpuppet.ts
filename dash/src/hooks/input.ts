@@ -1,11 +1,13 @@
 import { StateUpdater, useCallback, useState } from 'preact/hooks';
 
+export interface IInputBinder {
+  value: string,
+  onInput: (e: Event) => void,
+}
+
 type useInput = [
   string,
-  {
-    value: string,
-    onInput: (e: Event) => void,
-  },
+  IInputBinder,
   () => void,
   StateUpdater<string>,
 ]

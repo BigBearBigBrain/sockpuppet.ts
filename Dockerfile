@@ -1,11 +1,12 @@
 FROM node
 WORKDIR /dash
 COPY dash .
-ENV IN_CONTAINER=true
+ENV VITE_IN_CONTAINER=true
 RUN yarn build
 
 
 FROM denoland/deno:1.29.1
+ENV VITE_IN_CONTAINER=true
 EXPOSE 5038
 
 WORKDIR /sockpuppet

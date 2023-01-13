@@ -5,7 +5,9 @@ import { useChannelContext } from '../context/channel';
 import { useInput } from '../hooks/input';
 import { useSockpuppet } from '../sockpuppet';
 import { Message } from '../sockpuppet/message';
+import { Checkbox } from './checkbox';
 import { Dashboard } from './dashboard';
+import { JSONComposer } from './jsonComposer';
 
 export const MainRegion: FunctionComponent = () => {
   const { joinChannel, leaveChannel, socketReady, channels, host } = useSockpuppet();
@@ -17,6 +19,7 @@ export const MainRegion: FunctionComponent = () => {
   const [showJsonComposer, setShowJsonComposer] = useState(false);
 
   const [messages, setMessages] = useState<[string, Message][]>([]);
+  const [isValidJson, setIsValidJson] = useState(false);
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -32,7 +35,7 @@ export const MainRegion: FunctionComponent = () => {
     }
   }, [channelId, joinChannel, leaveChannel]);
 
-  
+
   useEffect(() => {
     setChannelId((channelId) => {
       if (host !== prevHost && channelId) {
@@ -41,9 +44,8 @@ export const MainRegion: FunctionComponent = () => {
         return '';
       }
       return channelId;
-    }
-    )
-  }, [host])
+    });
+  }, [host, prevHost, setChannelId])
 
   const sendMessage = useCallback((e: Event) => {
     e.preventDefault();
@@ -99,9 +101,16 @@ export const MainRegion: FunctionComponent = () => {
             ))}
           </ul>
         </div>
-        <form class="flex w-full gap-4" onSubmit={sendMessage}>
-          <input {...bindMessage} type="text" class="w-full p-4 text-lg rounded-lg dark:bg-black/20 bg-white/70 dark:text-white" />
-        </form>
+        {showJsonComposer ? (<JSONComposer bind={bindMessage} onSubmit={sendMessage} setValidJson={setIsValidJson} />) : (
+          <form class="flex w-full gap-4" onSubmit={sendMessage}>
+            <input {...bindMessage} type="text" class="w-full p-4 text-lg rounded-lg dark:bg-black/20 bg-white/70 dark:text-white" />
+          </form>
+        )}
+        <div class="flex mt-2 gap-6">
+          <Checkbox checked={showFullMessage} toggle={() => setShowFullMessage(old => !old)} label="Show raw packet" />
+          <Checkbox checked={showJsonComposer} toggle={() => setShowJsonComposer(old => !old)} label="Compose message as JSON" />
+
+        </div>
       </div>
       <div class="etched p-4">
         <h2 class="text-2xl font-extrabold">Packet Composition</h2>
@@ -110,7 +119,7 @@ export const MainRegion: FunctionComponent = () => {
         <pre class="w-full whitespace-pre-wrap etched p-2 mt-2">{JSON.stringify({
           'send_packet': {
             to: channelId,
-            message
+            message: showJsonComposer && message && isValidJson ? JSON.parse(message) : message
           }
         }, null, 2)}</pre>
       </div>

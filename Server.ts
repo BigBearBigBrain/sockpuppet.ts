@@ -82,23 +82,165 @@ export class SocketServer extends EventEmitter {
 
   handleNonWS?: (req: Request) => Promise<Response> = async (req) => {
     if (!this.showDash) return new Response('Dashboard is disabled')
-    const url = new URL(req.url);
-    let path = decodeURIComponent(url.pathname);
+    if (Deno.env.get('VITE_IN_CONTAINER')) {
+      const url = new URL(req.url);
+      let path = decodeURIComponent(url.pathname);
 
-    if (path === '/') path = '/index.html'
+      if (path === '/') path = '/index.html'
 
-    let file;
-    try {
-      file = await Deno.open('./dash/dist' + path, { read: true });
-    } catch {
-      return new Response('Resource not found');
+      let file;
+      try {
+        file = await Deno.open('./dash/dist' + path, { read: true });
+      } catch {
+        return new Response('Resource not found');
+      }
+
+      const headers = new Headers(req.headers);
+      headers.set('Content-Type', getMime(path))
+
+      const res = new Response(file!.readable, { headers });
+      return res;
+    } else {
+      return new Response(`
+      <!DOCTYPE html>
+      <html lang="en">
+      
+      <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Puppetshow</title>
+        <style>
+          html {
+            font-family: 'Open Sans', sans-serif;
+            color: white;
+          }
+      
+          body {
+            --tw-gradient-from: #280728;
+            --tw-gradient-to: rgb(40 7 40 / 0);
+            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+            --tw-gradient-to: #27384a;
+            --tw-bg-opacity: 1;
+            background-color: rgb(35 40 46 / var(--tw-bg-opacity));
+            background-image: radial-gradient(closest-side at center, var(--tw-gradient-stops));
+            border-right-color: #1904191a;
+            border-bottom-color: #1904191a;
+            border-top-color: #fcfcfc1a;
+            border-left-color: #fcfcfc1a;
+            display: grid;
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            animation: floating-g 100s linear infinite forwards;
+      
+          }
+      
+          @keyframes floating-g {
+            0% {
+              background-size: 500% 500%;
+              background-position: top right;
+            }
+      
+            30% {
+              background-size: 200% 500%;
+              background-position: bottom;
+            }
+      
+            60% {
+              background-size: 500% 200%;
+              background-position: top left;
+            }
+      
+            100% {
+              background-size: 500% 500%;
+              background-position: top right;
+            }
+          }
+      
+          div {
+            place-self: center;
+            text-align: center;
+          }
+      
+          h1 {
+            text-shadow: #280728 3px 3px 5px;
+          }
+      
+          p {
+            color: gray;
+            margin-bottom: 4rem;
+          }
+      
+          a {
+            padding: .75rem;
+            background-color: #386C9C;
+            border-radius: .75rem;
+            color: white;
+            text-decoration: none;
+          }
+      
+          .dance {
+            height: 8rem;
+          }
+      
+          img {
+            max-height: 100%;
+            animation: jump 2s linear infinite normal;
+          }
+      
+          @keyframes jump {
+            0% {
+              transform: scale(1, 1) translateY(0);
+            }
+      
+            10% {
+              transform: scale(1.1, .9) translateY(0);
+            }
+      
+            30% {
+              transform: scale(.9, 1.1) translateY(-2rem);
+            }
+      
+            50% {
+              transform: scale(1.05, .95) translateY(0);
+            }
+      
+            57% {
+              transform: scale(1, 1) translateY(-7px);
+            }
+      
+            64% {
+              transform: scale(1, 1) translateY(0);
+            }
+      
+            100% {
+              transform: scale(1, 1) translateY(0);
+            }
+          }
+        </style>
+      </head>
+      
+      <body>
+        <div>
+          <h1>Puppetshow is ready</h1>
+          <div class="dance">
+            <img src="http://puppetshow.cyborggrizzly.com/sockpuppet-solo.svg" />
+          </div>
+          <p>Click the link below to open Puppetshow and start monitoring Sockpuppet</p>
+          <a type="button">Open Puppetshow</a>
+        </div>
+      </body>
+      <script>
+        document.querySelector('a').href = \`https://puppetshow.cyborggrizzly.com?host=ws://\${location.host}\`
+      </script>
+      </html>
+      `, {
+        headers: {
+          "content-type": "text/html",
+        }
+      });
     }
-
-    const headers = new Headers(req.headers);
-    headers.set('Content-Type', getMime(path))
-
-    const res = new Response(file!.readable, { headers });
-    return res;
   }
 
   handleWs = (sock: WebSocket) => {

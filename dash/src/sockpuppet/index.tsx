@@ -57,7 +57,7 @@ interface IProps {
 export const PuppetTheater: FunctionComponent<IProps> = ({
   children,
   keepAlive = true,
-  host: hostProp = import.meta.env.IN_CONTAINER ? location.origin.replace(/http/, 'ws') : 'ws://localhost:5038',
+  host: hostProp = import.meta.env.VITE_IN_CONTAINER ? location.origin.replace(/http/, 'ws') : 'ws://localhost:5038',
   onConnect,
   receivesChannelList,
   receivesMetadata,

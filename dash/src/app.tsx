@@ -10,7 +10,6 @@ import { useQueryParams } from './hooks/useQueryParams'
 
 export function App() {
   const [{ host }, paramsLoaded] = useQueryParams();
-  console.log(host);
 
   useEffect(() => {
     document.addEventListener('contextmenu', (e) => {
@@ -27,7 +26,7 @@ export function App() {
         host={import.meta.env.NODE_ENV === "development" && !host ? "ws://localhost:5038" : host}
       >
         <ChannelProvider>
-          <Header isInContainer={!!import.meta.env.IN_CONTAINER} />
+          <Header isInContainer={!!import.meta.env.VITE_IN_CONTAINER} />
           <aside class="pane">
             <ChannelList />
           </aside>
