@@ -52,6 +52,9 @@ module.exports = {
       // }
       gridTemplateRows: {
         layout: 'auto 1fr'
+      },
+      height: {
+        main: 'calc(100vh - (6rem + 140px))'
       }
     },
   },

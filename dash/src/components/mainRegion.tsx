@@ -80,7 +80,7 @@ export const MainRegion: FunctionComponent = () => {
               'disconnect_from': [channelId],
             }, null, 2)}</pre>
           </div>
-          <div>
+          <div class="col-span-2">
             <h3 className="font-bold">Create this channel</h3>
             <p className="text-sm">Channels created from the client automatically close after all clients leave the channel unless the <var>keep</var> property is set to true</p>
             <pre class="w-full whitespace-pre-wrap etched p-2 mt-2">{JSON.stringify({

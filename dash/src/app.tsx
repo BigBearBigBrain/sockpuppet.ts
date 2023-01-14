@@ -30,7 +30,7 @@ export function App() {
           <aside class="pane">
             <ChannelList />
           </aside>
-          <main class="pane col-span-3">
+          <main class="pane col-span-3 h-main">
             <div class="w-full h-full rounded-md">
               <MainRegion />
             </div>

@@ -7,7 +7,7 @@ interface IProps {
   pollingRate?: number;
 }
 
-export const DashboardV1: FunctionComponent<IProps> = ({ pollingRate = 1000 }) => {
+export const DashboardV1: FunctionComponent<IProps> = () => {
   const { meta, channelList } = useSockpuppet();
 
   return (
@@ -29,8 +29,9 @@ export const DashboardV1: FunctionComponent<IProps> = ({ pollingRate = 1000 }) =
         <p class="text-2xl font-bold">Listeners</p>
       </div>
       <div class="dash-card flex-col">
-        <p class="text-2xl"><span class="font-extrabold">356</span> messages in the last hour</p>
-        <p>Avg. 347.7/hr</p>
+        {/* <p class="text-2xl"><span class="font-extrabold">356</span> messages in the last hour</p>
+        <p>Avg. 347.7/hr</p> */}
+        <p>I am a box :D</p>
       </div>
       <div class="dash-card flex-col">
         <p className="text-xl">Oldest channel age:</p>
