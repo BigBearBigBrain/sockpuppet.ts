@@ -1,5 +1,5 @@
 import { FunctionComponent } from 'preact'
-import { StateUpdater, useCallback, useState } from 'preact/hooks';
+import { StateUpdater, useCallback, useRef, useState } from 'preact/hooks';
 import { JSXInternal } from 'preact/src/jsx';
 import { IInputBinder } from '../hooks/input';
 
@@ -27,13 +27,12 @@ export const JSONComposer: FunctionComponent<IProps> = ({ bind, onSubmit, setVal
   return (
     <form
       onSubmit={onSubmit}
-      // onKeyDown={(e) => {
-      //   console.log(e.key);
-      //   if (e.ctrlKey && e.key === 'Enter') {
-      //     console.log('HELLO ');
-      //     onSubmit(e)
-      //   }
-      // }}
+      onKeyDown={(e) => {
+        if (e.ctrlKey && e.key === 'Enter') {
+          e.preventDefault()
+          onSubmit(e)
+        }
+      }}
     >
       {invalid && <p class="text-red-0">Error parsing JSON</p>}
       <textarea
