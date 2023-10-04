@@ -2,6 +2,7 @@ FROM node
 WORKDIR /dash
 COPY dash .
 ENV VITE_IN_CONTAINER=true
+RUN yarn
 RUN yarn build
 
 
@@ -19,4 +20,4 @@ ADD . .
 
 COPY --from=0 /dash dash
 
-CMD ["run", "--allow-net", "--allow-read", "--allow-write", "test.ts"]
+CMD ["run", "--allow-net", "--allow-read", "--allow-write", "--allow-env", "test.ts"]
