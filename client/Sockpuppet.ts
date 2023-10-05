@@ -50,7 +50,7 @@ export class Sockpuppet {
     this.socket.addEventListener('message', this.handleMessage);
 
     if (this.keepAlive)
-      this.initialPing = setTimeout(() => this.socket.send('pong'), 5000)
+      this.initialPing = setTimeout(() => this.socket.OPEN && this.socket.send('pong'), 5000)
 
     this.channels = new Map();
     this.callbacks = new Map([
