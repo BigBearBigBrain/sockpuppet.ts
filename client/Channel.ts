@@ -17,7 +17,7 @@ export class Channel<T = string> {
   }
 
   public send = (message: string, clientToSendTo?: number) =>
-    this.socket.send(JSON.stringify({
+    this.socket.OPEN && this.socket.send(JSON.stringify({
       send_packet: {
         to: this.id,
         message,
