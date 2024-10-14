@@ -2,25 +2,35 @@ import { Channel } from "./channel.ts";
 import { Client } from "./client.ts";
 import { Packet } from "./packet.ts";
 
-export class Sockpuppet {
+interface PuppetConfig {
+  port: number;
+  host?: string;
+}
+
+export class Sockpuppet extends EventTarget {
   private server: Deno.HttpServer;
-  private _socketVersion = "1.0";
   private _handshakeVersion = "1.0";
 
-  private clients: Map<WebSocket, Client> = new Map();
+  private clients: Map<WebSocket | string, Client> = new Map();
   private channels: Map<string, Channel> = new Map();
 
   private messageQueue: Packet[] = [];
 
-  constructor() {
-    this.server = Deno.serve((req) => {
-      if (req.headers.get("upgrade") === "websocket") {
-        const { socket, response } = Deno.upgradeWebSocket(req);
-        this.handleConnection(socket);
-        return response;
-      }
-      return new Response("Not a websocket request", { status: 400 });
-    });
+  private subscriptions: Map<string, ChannelSubscription<Packet>[]> = new Map();
+
+  constructor(cfg?: PuppetConfig) {
+    super();
+    this.server = Deno.serve(
+      { port: cfg?.port, hostname: cfg?.host },
+      (req) => {
+        if (req.headers.get("upgrade") === "websocket") {
+          const { socket, response } = Deno.upgradeWebSocket(req);
+          this.handleConnection(socket);
+          return response;
+        }
+        return new Response("Not a websocket request", { status: 400 });
+      },
+    );
   }
 
   public deleteClient(socket: WebSocket) {
@@ -32,7 +42,9 @@ export class Sockpuppet {
   }
 
   private handleConnection(socket: WebSocket) {
-    this.clients.set(socket, new Client(crypto.randomUUID(), socket, this));
+    const client = new Client(crypto.randomUUID(), socket, this);
+    this.clients.set(socket, client);
+    this.clients.set(client.id, client);
 
     socket.addEventListener("close", () => {
       this.clients.delete(socket);
@@ -41,7 +53,6 @@ export class Sockpuppet {
     socket.addEventListener("message", (event) => {
       try {
         const message = event.data;
-        console.log(message);
         switch (message) {
           case "ping":
             socket.send("pong");
@@ -55,22 +66,6 @@ export class Sockpuppet {
         socket.close();
       }
     });
-  }
-
-  private handleHandshake(socket: WebSocket, message: string) {
-    const handshake = JSON.parse(message);
-    if (handshake.version !== this._handshakeVersion) {
-      socket.send(JSON.stringify({
-        error: "Unsupported version",
-        version: this._handshakeVersion,
-      }));
-      socket.close();
-      return;
-    }
-    socket.send(JSON.stringify({
-      version: this._socketVersion,
-      success: true,
-    }));
   }
 
   private handleMessage(socket: WebSocket, message: string) {
@@ -92,6 +87,32 @@ export class Sockpuppet {
         this.handleMessageEvent(socket, msg);
         break;
     }
+  }
+
+  /**
+   * @description When a handshake is established, a status is sent to the client. With a status of 0, the client can use all of their known methods without concern. With a status of 1, the client will be notified of the outdated handshake version and will be provided with the handshake version that the server supports, to be used in determining which methods the client can use.
+   */
+  private handleHandshake(socket: WebSocket, message: string) {
+    const handshake = JSON.parse(message);
+    const client = this.clients.get(socket);
+    if (!client) return;
+    client.handshakeVersion = handshake.version;
+    if (handshake.version > this._handshakeVersion) {
+      socket.send(JSON.stringify({
+        error: "Outdated server handshake",
+        status: 1,
+        version: this._handshakeVersion,
+        clientId: client.id,
+        event: "handshake",
+      }));
+      return;
+    }
+    socket.send(JSON.stringify({
+      version: this._handshakeVersion,
+      status: 0,
+      clientId: client.id,
+      event: "handshake",
+    }));
   }
 
   private handleJoin(
@@ -120,7 +141,31 @@ export class Sockpuppet {
   }
 
   public createChannel(channelId: string) {
-    this.channels.set(channelId, new Channel(channelId, this));
+    const channel = new Channel(channelId, this);
+    this.channels.set(channelId, channel);
+    for (const [pattern, subscriptions] of this.subscriptions) {
+      if (channelId.match(pattern)) {
+        for (const subscription of subscriptions) {
+          this.subscribeToChannel(subscription, channel);
+        }
+      }
+    }
+  }
+
+  private subscribeToChannel(
+    subscription: ChannelSubscription<Packet>,
+    channel: Channel,
+  ) {
+    const unsub = subscription(channel);
+    channel.addEventListener("delete", unsub);
+  }
+
+  public deleteChannel(channelId: string) {
+    const channel = this.channels.get(channelId);
+    if (channel) {
+      this.channels.delete(channelId);
+      channel.delete();
+    }
   }
 
   private handleLeaveChannel(socket: WebSocket, msg: { channelId: string }) {
@@ -137,13 +182,22 @@ export class Sockpuppet {
 
   private handleMessageEvent(
     socket: WebSocket,
-    msg: { channelId: string; message: string; echo: boolean },
+    msg: { event: string; channelId: string; message: string; echo: boolean },
   ) {
     const client = this.clients.get(socket);
     if (!client) return;
+    this.dispatchEvent(
+      new CustomEvent(msg.event, {
+        detail: {
+          channelId: msg.channelId,
+          message: msg.message,
+          echo: msg.echo,
+        },
+      }),
+    );
     const packet = new Packet(
       client,
-      "message",
+      msg.event,
       msg.channelId,
       msg.message,
       msg.echo,
@@ -151,10 +205,24 @@ export class Sockpuppet {
     this.messageQueue.push(packet);
     this.processQueue();
   }
-  
+
   private processQueue() {
     for (const packet of this.messageQueue) {
       this.channels.get(packet.to)?.sendMessage(packet);
+    }
+  }
+
+  public subscribe(pattern: string, callback: ChannelSubscription<Packet>) {
+    const subscriptions = this.subscriptions.get(pattern);
+    if (subscriptions) {
+      subscriptions.push(callback);
+      for (const [id, channel] of this.channels) {
+        if (id.match(pattern)) {
+          this.subscribeToChannel(callback, channel);
+        }
+      }
+    } else {
+      this.subscriptions.set(pattern, [callback]);
     }
   }
 }

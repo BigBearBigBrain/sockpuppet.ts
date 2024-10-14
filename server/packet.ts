@@ -40,6 +40,7 @@ export class Packet {
       event: this._event,
       to: this._to,
       message: this._message,
+      from: this._from.id
     });
   }
 } 

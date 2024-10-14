@@ -1,219 +1,149 @@
-import { channelCallback, socketCallback } from "./callbackTypes.ts";
-import { Channel } from "./Channel.ts";
-import { Message } from "./Message.ts";
+import { Channel } from "./channel.ts";
 
-interface PuppetOptions {
-  keepAlive?: boolean;
-}
-export class Sockpuppet {
-  private socket: WebSocket;
+export class Sockpuppet extends EventTarget {
+  private _socket!: WebSocket;
+  private _handshakeVersion = "1.0";
+  private _serverVersion = "1.0";
+  private _serverOutdated = false;
 
-  public channels: Map<string, Channel>;
+  private channels: Map<string, Channel> = new Map();
+  private subscriptions: Map<string, ChannelSubscription<ClientPacket>[]> =
+    new Map();
 
-  public callbacks: Map<string, socketCallback[]>;
-
-  private initialPing?: number;
-
-  private keepAlive = true;
-
-  private _versionMismatch?: boolean;
-  get versionMismatch() {
-    return this._versionMismatch;
-  }
-  private _handshakeAccepted = false;
-  get handshakeAccepted() {
-    return this._handshakeAccepted;
-  }
-  private handshakeCheckDelay = 4000;
-  private socketReady = false;
-
-  static readonly puppetVersion = "0.6";
-
-  // deno-lint-ignore no-explicit-any
-  private messageQueue: MessageEvent<any>[] = [];
-
-  constructor(path: string, onConnect?: () => void, options?: PuppetOptions) {
-    if (isFullUrl(path)) this.socket = new WebSocket(path);
-    else this.socket = new WebSocket(`${window.location.host}${path}`);
-
-    if (onConnect) {
-      this.socket.addEventListener("open", () => {
-        this.socket.send("handshake");
-        this.socketReady = true;
-        setTimeout(() => {
-          if (!this.handshakeAccepted && this.socketReady) {
-            this._versionMismatch = true;
-            console.warn(
-              `Socket has connected successfully but did not receive a handshake. If the host is a Sockpuppet server, then it may be an older version that does not support handshakes. Consider upgrading the server to ${Sockpuppet.puppetVersion}`,
-            );
-          }
-        }, this.handshakeCheckDelay);
-        onConnect();
-      });
-    }
-
-    this.keepAlive = options?.keepAlive ?? this.keepAlive;
-
-    this.socket.addEventListener("message", this.handleMessage);
-
-    if (this.keepAlive) {
-      this.initialPing = setTimeout(
-        () => this.socket.OPEN && this.socket.send("pong"),
-        5000,
-      );
-    }
-
-    this.channels = new Map();
-    this.callbacks = new Map([
-      ["disconnect", []],
-    ]);
+  private _id?: string;
+  public get id() {
+    return this._id;
   }
 
-  public joinChannel = (
-    channelId: string,
-    handler: channelCallback<string>,
-  ) => {
-    if (this.socket.readyState === 1) {
-      const channel = new Channel(channelId, this.socket);
-      this.channels.set(channelId, channel);
-      channel.addListener(handler);
-      this.socket.send(JSON.stringify({
-        connect_to: [channelId],
+  constructor(url: string | URL) {
+    super();
+    this.configureSocket(url);
+  }
+
+  private configureSocket(url: string | URL) {
+    this._socket = new WebSocket(url);
+    this._socket.addEventListener("open", () => {
+      this._socket.send(JSON.stringify({
+        version: this._handshakeVersion,
+        event: "handshake",
       }));
-    } else {
-      this.socket.addEventListener("open", () => {
-        const channel = new Channel(channelId, this.socket);
-        this.channels.set(channelId, channel);
-        channel.addListener(handler);
-        this.socket.send(JSON.stringify({
-          connect_to: [channelId],
-        }));
-      });
-    }
-  };
-
-  public on = (event: string, callback: socketCallback) => {
-    if (!this.callbacks.has(event)) {
-      this.callbacks.set(event, []).get;
-    }
-    this.callbacks.get(event)?.push(callback);
-  };
-
-  public onDisconnect = (callback: socketCallback) =>
-    this.callbacks.get("disconnect")?.push(callback);
-
-  private handleMessage = (message: MessageEvent<string>) => {
-    // Handle any events
-    switch (message.data) {
-      case "open":
-      case "connected":
-        //I'm sure these may be useful
-        break;
-      case "disconnected":
-        this.callbacks.get("disconnect")?.forEach((cb) => cb(message.data));
-        this.channels.forEach((channel) => channel.execLeaveListeners());
-        break;
-      case "ping":
-        clearTimeout(this.initialPing);
-        if (this.keepAlive) {
-          this.socket.send("pong");
-        }
-        break;
-      default:
-        this.messageQueue.push(message);
-        this.processQueue();
-        break;
-    }
-  };
-
-  private processQueue() {
-    let message = this.messageQueue.shift();
-    while (message) {
-      try {
-        const msg = new Message(JSON.parse(message.data));
-        this.handleEvents(msg);
-      } catch (_e) {
-        const msg = message.data;
-        this.callbacks.get(msg)?.forEach((cb) => cb(msg));
-      }
-      message = this.messageQueue.shift();
-    }
-  }
-
-  private handleEvents = (message: Message) => {
-    switch (message.event) {
-      case "leave":
-        this.deleteChannel(message.to);
-        break;
-      case "join":
-        this.channels.get(message.to)?.execJoinListeners();
-        break;
-      case "create":
-        this.onChannelCreate(message);
-        break;
-      case "handshake": {
-        this._handshakeAccepted = true;
-        this._versionMismatch =
-          (message as unknown as Message<{ puppetVersion: string }>).message
-            .puppetVersion < Sockpuppet.puppetVersion;
-        if (this._versionMismatch) {
-          console.warn(
-            "Sockpuppet server version is older than client. Functionality is limited",
-          );
-        }
-      }
-    }
-    this.callbacks.get(message.event || message.message)?.forEach((cb) =>
-      cb(message)
-    );
-    this.channels.get(message.to)?.execListeners(message.message);
-  };
-
-  public leaveChannel = (channelId: string) =>
-    this.socket.send(JSON.stringify({
-      disconnect_from: [channelId],
-    }));
-
-  private deleteChannel = (channelId: string) => {
-    const channel = this.channels.get(channelId);
-    if (channel) {
-      channel.execLeaveListeners();
-      this.channels.delete(channelId);
-    }
-  };
-
-  public getChannel = (channelId: string) => this.channels.get(channelId);
-
-  public createChannel = (channelId: string) =>
-    new Promise<Message>((res, rej) => {
-      this.socket.send(JSON.stringify({
-        create_channel: channelId,
-      }));
-
-      const poll = setInterval(() => {
-        const channelMessage = this.channelCreateMessages.get(channelId);
-        if (channelMessage) {
-          clearInterval(poll);
-          switch (channelMessage.status) {
-            case "FAILED":
-              rej(channelMessage);
-              break;
-            case "SUCCESS":
-              res(channelMessage);
-              break;
-          }
-          this.channelCreateMessages.delete(channelId);
-        }
-      }, 10);
     });
 
-  private channelCreateMessages: Map<string, Message> = new Map();
+    this._socket.addEventListener("message", (e) => {
+      try {
+        const message = e.data;
+        switch (message) {
+          case "ping":
+            this._socket.send("pong");
+            break;
+          default:
+            this.handleMessage(message);
+        }
+      } catch (e) {
+        console.log("[Sockpuppet]: Error processing message", e);
+      }
+    });
+  }
 
-  private onChannelCreate = (msg: Message) => {
-    this.channelCreateMessages.set(msg.channelId!, msg);
-  };
+  private handleMessage(e: string) {
+    const message = JSON.parse(e) as ClientPacket;
+    switch (message.event) {
+      case "join":
+        this.handleJoin(message);
+        break;
+      case "create":
+        this.handleCreate(message);
+        break;
+      case "leave":
+        this.handleLeave(message);
+        break;
+      case "handshake":
+        this.handleHandshake(e);
+        break;
+      default:
+        this.handleMessageEvent(message);
+        break;
+    }
+  }
+  private handleHandshake(message: string) {
+    const handshake = JSON.parse(message);
+    this._id = handshake.clientId;
+    this._serverVersion = handshake.version;
+    this._serverOutdated = Boolean(handshake.status);
+  }
+  private handleMessageEvent(message: ClientPacket) {
+    this.dispatchEvent(
+      new CustomEvent<ClientPacket>("message", {
+        detail: message,
+      }),
+    );
+    if (message.to === this.id) {
+      this.dispatchEvent(
+        new CustomEvent(message.event, {
+          detail: message,
+        }),
+      );
+      return;
+    }
+    const channel = this.channels.get(message.to);
+    if (channel) {
+      channel.receiveMessage(message);
+    }
+  }
+  private handleLeave(message: ClientPacket) {
+    const channel = this.channels.get(message.to);
+    if (channel) {
+      channel.delete();
+    }
+  }
+  private handleCreate(message: ClientPacket) {
+    this.dispatchEvent(
+      new CustomEvent("create", {
+        detail: message.message,
+      }),
+    );
+  }
+  private handleJoin(message: ClientPacket) {
+    const channel = new Channel(message.message, this);
+    this.channels.set(message.message, channel);
+    for (const [pattern,subscriptions] of this.subscriptions.entries()) {
+      if (channel.id.match(pattern)) {
+        for (const subscription of subscriptions) {
+          this.subscribeToChannel(subscription, channel)
+        }
+      }
+    }
+  }
+
+  public sendMessage(packet: ClientPacket) {
+    this._socket.send(JSON.stringify(packet));
+  }
+
+  public disconnect() {
+    this._socket.close();
+  }
+
+  public subscribe(
+    pattern: string,
+    callback: ChannelSubscription<ClientPacket>,
+  ) {
+    const subscriptions = this.subscriptions.get(pattern);
+    if (subscriptions) {
+      subscriptions.push(callback);
+      for (const [id, channel] of this.channels) {
+        if (id.match(pattern)) {
+          this.subscribeToChannel(callback, channel);
+        }
+      }
+    } else {
+      this.subscriptions.set(pattern, [callback]);
+    }
+  }
+  private subscribeToChannel(
+    subscription: ChannelSubscription<ClientPacket>,
+    channel: Channel,
+  ) {
+    const unsub = subscription(channel);
+    channel.addEventListener("delete", unsub);
+  }
 }
-
-const isFullUrl = (url: string) =>
-  /(wss?|https?):\/\/.+\.(io|com|org|net)(\/.*)?/i.test(url) ||
-  url.includes("localhost");
