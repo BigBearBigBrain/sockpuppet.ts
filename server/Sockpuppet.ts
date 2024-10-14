@@ -9,7 +9,9 @@ interface PuppetConfig {
 
 const illegalChannelNames = ["all", "message"];
 
-export class Sockpuppet extends EventTarget {
+const PuppetEventTarget = EventTarget as TypedEventTarget<SockpuppetEventMap>;
+
+export class Sockpuppet extends PuppetEventTarget {
   private server: Deno.HttpServer;
   private _handshakeVersion = "1.0";
 
@@ -18,7 +20,7 @@ export class Sockpuppet extends EventTarget {
 
   private messageQueue: Packet[] = [];
 
-  private subscriptions: Map<string, ChannelSubscription<Packet>[]> = new Map();
+  private subscriptions: Map<string, ChannelSubscription[]> = new Map();
 
   constructor(cfg?: PuppetConfig) {
     super();
@@ -169,7 +171,7 @@ export class Sockpuppet extends EventTarget {
   }
 
   private subscribeToChannel(
-    subscription: ChannelSubscription<Packet>,
+    subscription: ChannelSubscription,
     channel: Channel,
   ) {
     const unsub = subscription(channel);
@@ -235,7 +237,7 @@ export class Sockpuppet extends EventTarget {
     }
   }
 
-  public subscribe(pattern: string, callback: ChannelSubscription<Packet>) {
+  public subscribe(pattern: string, callback: ChannelSubscription) {
     const subscriptions = this.subscriptions.get(pattern);
     if (subscriptions) {
       subscriptions.push(callback);

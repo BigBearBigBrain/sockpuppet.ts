@@ -76,12 +76,12 @@ sockpuppet.createChannel(channelName);
 sockpuppet.joinChannel(channelName);
 
 sockpuppet.addEventListener("message", (e) => {
-  console.log(e.detail.content);
+  console.log(e.detail.message);
 });
 
 sockpuppet.subscribe(channelName, (channel) => {
-  const listener = (message) => {
-    console.log(message.content);
+  const listener = (e) => {
+    console.log(e.detail.message);
   };
   channel.addEventListener("message", listener);
   channel.sendMessage(Message.create("Hello World!", { echo: true }));
@@ -103,7 +103,7 @@ const sockpuppet = new Sockpuppet("ws://localhost:8000");
 
 const eventName = "custom-event";
 sockpuppet.addEventListener(eventName, (e) => {
-  console.log(e.detail.content);
+  console.log(e.detail.message);
 });
 
 const event = Message.event(eventName, "Custom Event");
@@ -118,7 +118,7 @@ import { Message, Sockpuppet } from "@cgg/sockpuppet";
 const sockpuppet = new Sockpuppet();
 
 sockpuppet.addEventListener("custom-event", (e) => {
-  console.log(e.detail.content);
+  console.log(e.detail.message);
 });
 ```
 

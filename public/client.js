@@ -228,11 +228,11 @@ var channelName = "channel";
 sockpuppet.createChannel(channelName);
 sockpuppet.joinChannel(channelName);
 sockpuppet.addEventListener("message", (e) => {
-  console.log(e.detail.content);
+  console.log(e.detail.message);
 });
 sockpuppet.subscribe(channelName, (channel) => {
   const listener = (e) => {
-    console.log(e.detail);
+    console.log(e.detail.message);
   };
   channel.addEventListener("message", listener);
   channel.sendMessage(Message.create("Hello World!", { echo: true }));

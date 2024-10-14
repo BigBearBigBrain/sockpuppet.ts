@@ -2,7 +2,8 @@ import type { Client } from "./client.ts";
 import type { Packet } from "./packet.ts";
 import type { Sockpuppet } from "./Sockpuppet.ts";
 
-export class Channel extends EventTarget implements IChannel<Packet> {
+export class Channel
+  extends (EventTarget as TypedEventTarget<SockpuppetEventMap>) {
   private clients: Set<Client> = new Set();
 
   constructor(

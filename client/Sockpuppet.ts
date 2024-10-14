@@ -1,15 +1,15 @@
 import { Channel } from "./channel.ts";
 import { Message } from "@cgg/sockpuppet/client";
 
-export class Sockpuppet extends EventTarget {
+export class Sockpuppet
+  extends (EventTarget as TypedEventTarget<SockpuppetEventMap>) {
   private _socket!: WebSocket;
   private _handshakeVersion = "1.0";
   private _serverVersion = "1.0";
   private _serverOutdated = false;
 
   private channels: Map<string, Channel> = new Map();
-  private subscriptions: Map<string, ChannelSubscription<ClientPacket>[]> =
-    new Map();
+  private subscriptions: Map<string, ClientChannelSubscription[]> = new Map();
 
   private _id?: string;
   public get id() {
@@ -131,7 +131,7 @@ export class Sockpuppet extends EventTarget {
 
   public subscribe(
     pattern: string,
-    callback: ChannelSubscription<ClientPacket>,
+    callback: ClientChannelSubscription,
   ) {
     const subscriptions = this.subscriptions.get(pattern);
     if (subscriptions) {
@@ -146,7 +146,7 @@ export class Sockpuppet extends EventTarget {
     }
   }
   private subscribeToChannel(
-    subscription: ChannelSubscription<ClientPacket>,
+    subscription: ClientChannelSubscription,
     channel: Channel,
   ) {
     const unsub = subscription(channel);
