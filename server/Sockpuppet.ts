@@ -1,3 +1,4 @@
+
 import { Channel } from "./channel.ts";
 import { Client } from "./client.ts";
 import { Packet } from "./packet.ts";
@@ -22,15 +23,17 @@ export class Sockpuppet extends EventTarget {
     super();
     this.server = Deno.serve(
       { port: cfg?.port, hostname: cfg?.host },
-      (req) => {
-        if (req.headers.get("upgrade") === "websocket") {
-          const { socket, response } = Deno.upgradeWebSocket(req);
-          this.handleConnection(socket);
-          return response;
-        }
-        return new Response("Not a websocket request", { status: 400 });
-      },
+      (r) => this.handler(r)
     );
+  }
+
+  protected handler(req: Request): Response | Promise<Response> {
+    if (req.headers.get("upgrade") === "websocket") {
+      const { socket, response } = Deno.upgradeWebSocket(req);
+      this.handleConnection(socket);
+      return response;
+    }
+    return new Response("Not a websocket request", { status: 400 });
   }
 
   public deleteClient(socket: WebSocket) {
@@ -70,6 +73,7 @@ export class Sockpuppet extends EventTarget {
 
   private handleMessage(socket: WebSocket, message: string) {
     const msg = JSON.parse(message) as ClientPacket;
+    console.log(msg)
     switch (msg.event) {
       case "join":
         this.handleJoin(socket, msg);

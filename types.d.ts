@@ -1,4 +1,4 @@
-import type { Packet } from "./mod.ts";
+import type { Packet } from "./server/packet.ts";
 
 declare global {
   type ChannelSubscription<T> = (channel: IChannel<T>) => () => void;
