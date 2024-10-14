@@ -3,79 +3,143 @@
 ![img](https://github.com/BigBearBigBrain/sockpuppet.ts/raw/main/sockpuppet-logo.svg)
 
 ## Contents
-[Usage](#usage)
-- [Server](#server)
-- [Client](#client)
-- [Roadmap](#roadmap)
 
-Sockpuppet is a lightweight WebSocket library that requires minimal configuration to get up and running, while still offering plenty of options for configurations.
+- [Usage](#usage)
+  - [Server](#server)
+  - [Client](#client)
 
-The ethos behind Sockpuppet is that the server can be set up and deployed with very little additional code while channels and networks are created dynamically from the front-end.
+<!-- - [Roadmap](#roadmap) -->
 
-Middleware can be applied to channels, allowing for authentication and more complex handling of messages. Networks group channels together, allowing for separation of disciplines. Additionally, middlware can be applied to entire networks
-
-There is also a small web server built in that allows for endpoints to be used in tandem with sockets.
+Sockpuppet is a lightweight, event driven, and easy to use WebSocket library for
+Deno. It is designed to be simple and easy to use, while still providing a
+powerful and flexible API for building real-time applications.
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ## Usage
 
-#### Server
-```ts
-import { Sockpuppet } from 'http://deno.land/x/sockpuppet/mod.ts';
+### Server
 
-const puppet = new Sockpuppet({
-  port: 3000
+To use Sockpuppet, you first need to create a new instance of the `Sockpuppet`
+class. This class represents the server that will handle all of the WebSocket
+connections and messages.
+
+```typescript
+import { Sockpuppet } from "@cgg/sockpuppet";
+
+const sockpuppet = new Sockpuppet();
+```
+
+Sockpuppet is up and running! Now you can start handling WebSocket connections
+and messages.
+
+### Client
+
+The client handles all of the everything. The core objective of Sockpuppet is
+flexibility, so the just about anything you can do with the server, you can do
+with the client.
+
+```typescript
+import { Message, Sockpuppet } from "@cgg/sockpuppet/client";
+
+const sockpuppet = new Sockpuppet("ws://localhost:8000");
+const channelName = "channel";
+
+sockpuppet.createChannel(channelName);
+sockpuppet.joinChannel(channelName);
+
+sockpuppet.subscribe(channelName, (channel) => {
+  const listener = (message) => {
+    console.log(message.content);
+  };
+  channel.addEventListener("message", listener);
+  channel.sendMessage(Message.create("Hello World!", { echo: true }));
+  return () => channel.removeEventListener("message", listener);
+});
+```
+
+## Event Driven API
+
+Sockpuppet is event driven. You can listen for events on the client and server
+using the `addEventListener` method. The message event is triggered every time a
+message is sent, regardless of its event type.
+
+These events are triggered on both the core sockpuppet instance and on the
+respective channel.
+
+```typescript
+import { Message, Sockpuppet } from "@cgg/sockpuppet/client";
+
+const sockpuppet = new Sockpuppet("ws://localhost:8000");
+const channelName = "channel";
+
+sockpuppet.createChannel(channelName);
+sockpuppet.joinChannel(channelName);
+
+sockpuppet.addEventListener("message", (e) => {
+  console.log(e.detail.content);
 });
 
-puppet.createChannel('chat');
+sockpuppet.subscribe(channelName, (channel) => {
+  const listener = (message) => {
+    console.log(message.content);
+  };
+  channel.addEventListener("message", listener);
+  channel.sendMessage(Message.create("Hello World!", { echo: true }));
+  return () => channel.removeEventListener("message", listener);
+});
 ```
+
+### Custom Events
+
+You can create your own events by simply building a custom event and dispatching
+it using the Message static methods.
 
 #### Client
-```js
-import { Sockpuppet } from 'http://deno.land/x/sockpuppet/client/mod.ts';
 
-const puppet = new Sockpuppet('ws://localhost:6969', () => {
-  console.log('Sockpuppet is ready to play!');
-  puppet.joinChannel('chat', message => console.log(message));
-  puppet.getChannel('chat').send('Hello, world!);
-}
+```typescript
+import { Message, Sockpuppet } from "@cgg/sockpuppet/client";
+
+const sockpuppet = new Sockpuppet("ws://localhost:8000");
+
+const eventName = "custom-event";
+sockpuppet.addEventListener(eventName, (e) => {
+  console.log(e.detail.content);
+});
+
+const event = Message.event(eventName, "Custom Event");
+sockpuppet.sendMessage(event);
 ```
 
-The above example uses an explicitly defined "chat" channel. The `createChannel` method will also be available on the client side so cases where you need to create a new channel can be done more dynamically from the front end without needing to worry about those cases in your setup.
+#### Server
 
-#### Dashboard - Puppetshow
-Sockpuppet now ships with a built-in dashboard called Puppetshow! Puppetshow will allow you to see real-time statistics* of your server, as well as give you tools to be able to interact with and manage channels and networks.
+```typescript
+import { Message, Sockpuppet } from "@cgg/sockpuppet";
 
-The dashboard is on by default, however it can be disabled by setting `PuppetOptions.dashboard` to `false`:
-```ts
-...
-const puppet = new Sockpuppet({
-  ...options,
-  dashboard: false
-})
-...
+const sockpuppet = new Sockpuppet();
+
+sockpuppet.addEventListener("custom-event", (e) => {
+  console.log(e.detail.content);
+});
 ```
 
-**statistics are currently volatile and only show records from the time the server was started. Eventually, these statistics will be recorded permanently*
+### News
 
-## Docker
-There is now a Docker image available on Dockerhub that allows you to spin up a no-config Sockpuppet instance. Simply run `docker pull cyborggrizzly/sockpuppet` to pull the image or include it in your own Docker ecosystem.
+Version 1.0 is here, and we are out of alpha. This version was a massive rewrite
+that got rid of a lot of unnecessary complication. As you would have noticed,
+the API is a lot cleaner and easier to use. By moving to the JS native
+EventTarget API, we were able to remove a lot of the complexity that was
+previously required to make a real-time application.
 
+Unfortunately this version is not backwards compatible as the original methods
+were too vague and "dangerous." To help mitigate this, a new handshake protocol
+has been implemented so that disparate clients can understand the server's
+capabilities. If this handshake fails, the client will be disconnected.
 
-### Roadmap
-- [x] Basic channel structure
-- [X] Better client side interactions
-- [x] Dynamic channel creation
-- [x] Channel middleware
-- [ ] Public test site
-- [ ] Networks of channels
-- [X] Network middleware
-- [ ] React Hooks Package
-- [ ] Angular Package
-- [ ] Vue Package
-- [ ] CDN for compiled client
-- [X] Docker image for instant deployment
+There is also an unfortunate regression, that being the removal of the
+dashboard. This will be re-added in 1.1 with new features. In theory, existing
+instances of the dashboard could work for testing messages, but it will not get
+updated channel and client information.
 
 ---
 
-*More updates coming soon!*
-*❤️ - Emma*
+_More updates coming soon!_ _❤️ - Emma_

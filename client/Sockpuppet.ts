@@ -1,4 +1,5 @@
 import { Channel } from "./channel.ts";
+import { Message } from "@cgg/sockpuppet/client";
 
 export class Sockpuppet extends EventTarget {
   private _socket!: WebSocket;
@@ -15,6 +16,8 @@ export class Sockpuppet extends EventTarget {
     return this._id;
   }
 
+  private queue: ClientPacket[] = [];
+
   constructor(url: string | URL) {
     super();
     this.configureSocket(url);
@@ -27,6 +30,7 @@ export class Sockpuppet extends EventTarget {
         version: this._handshakeVersion,
         event: "handshake",
       }));
+      this.processQueue();
     });
 
     this._socket.addEventListener("message", (e) => {
@@ -77,7 +81,7 @@ export class Sockpuppet extends EventTarget {
         detail: message,
       }),
     );
-    if (message.to === this.id) {
+    if (message.to === this.id && message.event !== "message") {
       this.dispatchEvent(
         new CustomEvent(message.event, {
           detail: message,
@@ -94,7 +98,7 @@ export class Sockpuppet extends EventTarget {
     const channel = this.channels.get(message.to);
     if (channel) {
       channel.delete();
-      this.channels.delete(message.to)
+      this.channels.delete(message.to);
     }
   }
   private handleCreate(message: ClientPacket) {
@@ -107,17 +111,18 @@ export class Sockpuppet extends EventTarget {
   private handleJoin(message: ClientPacket) {
     const channel = new Channel(message.message, this);
     this.channels.set(message.message, channel);
-    for (const [pattern,subscriptions] of this.subscriptions.entries()) {
+    for (const [pattern, subscriptions] of this.subscriptions.entries()) {
       if (channel.id.match(pattern)) {
         for (const subscription of subscriptions) {
-          this.subscribeToChannel(subscription, channel)
+          this.subscribeToChannel(subscription, channel);
         }
       }
     }
   }
 
   public sendMessage(packet: ClientPacket) {
-    this._socket.send(JSON.stringify(packet));
+    this.queue.push(packet);
+    this.processQueue();
   }
 
   public disconnect() {
@@ -148,23 +153,21 @@ export class Sockpuppet extends EventTarget {
     channel.addEventListener("delete", unsub);
   }
 
-  public createChannel(channelId:string) {
-    this._socket.send(JSON.stringify({
-      event: "create",
-      to: channelId
-    }))
+  private processQueue() {
+    if (this._socket.OPEN !== 1) return;
+    while (this.queue.length > 0) {
+      const packet = this.queue.shift();
+      this._socket.send(JSON.stringify(packet));
+    }
   }
-  public joinChannel(channelId:string) {
-    this._socket.send(JSON.stringify({
-      event: "join",
-      to: channelId
-    }))
+
+  public createChannel(channelId: string) {
+    this.queue.push(Message.event("create", undefined, channelId));
   }
-  public leaveChannel(channelId:string) {
-    this._socket.send(JSON.stringify({
-      event: "join",
-      to: channelId
-    }))
+  public joinChannel(channelId: string) {
+    this.queue.push(Message.event("join", undefined, channelId));
   }
-  
+  public leaveChannel(channelId: string) {
+    this.queue.push(Message.event("leave", undefined, channelId));
+  }
 }

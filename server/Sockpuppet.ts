@@ -1,4 +1,3 @@
-
 import { Channel } from "./channel.ts";
 import { Client } from "./client.ts";
 import { Packet } from "./packet.ts";
@@ -7,6 +6,8 @@ interface PuppetConfig {
   port: number;
   host?: string;
 }
+
+const illegalChannelNames = ["all", "message"];
 
 export class Sockpuppet extends EventTarget {
   private server: Deno.HttpServer;
@@ -23,7 +24,7 @@ export class Sockpuppet extends EventTarget {
     super();
     this.server = Deno.serve(
       { port: cfg?.port, hostname: cfg?.host },
-      (r) => this.handler(r)
+      (r) => this.handler(r),
     );
   }
 
@@ -73,7 +74,7 @@ export class Sockpuppet extends EventTarget {
 
   private handleMessage(socket: WebSocket, message: string) {
     const msg = JSON.parse(message) as ClientPacket;
-    console.log(msg)
+    console.log(msg);
     switch (msg.event) {
       case "join":
         this.handleJoin(socket, msg);
@@ -135,6 +136,17 @@ export class Sockpuppet extends EventTarget {
   private handleCreate(socket: WebSocket, msg: ClientPacket) {
     const client = this.clients.get(socket);
     if (!client) return;
+    if (illegalChannelNames.includes(msg.to)) {
+      socket.send(
+        new Packet(
+          client,
+          "error",
+          msg.to,
+          "Attempted to create an illegal channel name",
+        ).serialize(),
+      );
+      return;
+    }
     const channel = this.channels.get(msg.to);
     if (!channel) {
       this.createChannel(msg.to);
@@ -191,14 +203,21 @@ export class Sockpuppet extends EventTarget {
     const client = this.clients.get(socket);
     if (!client) return;
     this.dispatchEvent(
-      new CustomEvent(msg.event, {
-        detail: {
-          channelId: msg.to,
-          message: msg.message,
-          echo: msg.echo,
-        },
+      new CustomEvent("message", {
+        detail: msg,
       }),
     );
+    if (msg.message !== "message") {
+      this.dispatchEvent(
+        new CustomEvent(msg.event, {
+          detail: {
+            channelId: msg.to,
+            message: msg.message,
+            echo: msg.echo,
+          },
+        }),
+      );
+    }
     const packet = new Packet(
       client,
       msg.event,

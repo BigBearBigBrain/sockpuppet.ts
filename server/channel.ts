@@ -27,11 +27,13 @@ export class Channel extends EventTarget implements IChannel<Packet> {
         detail: packet,
       }),
     );
-    this.dispatchEvent(
-      new CustomEvent<Packet>(packet.event, {
-        detail: packet,
-      }),
-    );
+    if (packet.event !== "message") {
+      this.dispatchEvent(
+        new CustomEvent<Packet>(packet.event, {
+          detail: packet,
+        }),
+      );
+    }
     this.clients.forEach((c) => {
       if (c !== packet.from) {
         c.sendMessage(packet);

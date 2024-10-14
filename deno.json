@@ -8,7 +8,7 @@
     "@std/http": "jsr:@std/http@^1.0.8",
     "@std/testing": "jsr:@std/testing@^1.0.3",
     "esbuild": "npm:esbuild@^0.24.0",
-    "http/": "https://deno.land/std@0.83.0/http/",
-    "std/": "https://deno.land/std@0.83.0/"
+    "@cgg/sockpuppet": "./server/mod.ts",
+    "@cgg/sockpuppet/client": "./client/mod.ts"
   }
 }

@@ -7,20 +7,33 @@ var Channel = class extends EventTarget {
     this.parent = parent;
   }
   receiveMessage(packet) {
-    this.dispatchEvent(new CustomEvent("message", {
-      detail: packet
-    }));
-    this.dispatchEvent(new CustomEvent(packet.event, {
-      detail: packet
-    }));
+    this.dispatchEvent(
+      new CustomEvent("message", {
+        detail: packet
+      })
+    );
+    if (packet.message !== "message") {
+      this.dispatchEvent(
+        new CustomEvent(packet.event, {
+          detail: packet
+        })
+      );
+    }
   }
   sendMessage(packet) {
-    this.dispatchEvent(new CustomEvent("message", {
-      detail: packet
-    }));
-    this.dispatchEvent(new CustomEvent(packet.event, {
-      detail: packet
-    }));
+    packet.to = this.id;
+    this.dispatchEvent(
+      new CustomEvent("message", {
+        detail: packet
+      })
+    );
+    if (packet.message !== "message") {
+      this.dispatchEvent(
+        new CustomEvent(packet.event, {
+          detail: packet
+        })
+      );
+    }
     this.parent.sendMessage(packet);
   }
   delete() {
@@ -40,6 +53,7 @@ var Sockpuppet = class extends EventTarget {
   get id() {
     return this._id;
   }
+  queue = [];
   constructor(url) {
     super();
     this.configureSocket(url);
@@ -51,6 +65,7 @@ var Sockpuppet = class extends EventTarget {
         version: this._handshakeVersion,
         event: "handshake"
       }));
+      this.processQueue();
     });
     this._socket.addEventListener("message", (e) => {
       try {
@@ -99,7 +114,7 @@ var Sockpuppet = class extends EventTarget {
         detail: message
       })
     );
-    if (message.to === this.id) {
+    if (message.to === this.id && message.event !== "message") {
       this.dispatchEvent(
         new CustomEvent(message.event, {
           detail: message
@@ -138,7 +153,8 @@ var Sockpuppet = class extends EventTarget {
     }
   }
   sendMessage(packet) {
-    this._socket.send(JSON.stringify(packet));
+    this.queue.push(packet);
+    this.processQueue();
   }
   disconnect() {
     this._socket.close();
@@ -160,25 +176,65 @@ var Sockpuppet = class extends EventTarget {
     const unsub = subscription(channel);
     channel.addEventListener("delete", unsub);
   }
+  processQueue() {
+    if (this._socket.OPEN !== 1) return;
+    while (this.queue.length > 0) {
+      const packet = this.queue.shift();
+      this._socket.send(JSON.stringify(packet));
+    }
+  }
   createChannel(channelId) {
-    this._socket.send(JSON.stringify({
-      event: "create",
-      to: channelId
-    }));
+    this.queue.push(Message.event("create", void 0, channelId));
   }
   joinChannel(channelId) {
-    this._socket.send(JSON.stringify({
-      event: "join",
-      to: channelId
-    }));
+    this.queue.push(Message.event("join", void 0, channelId));
   }
   leaveChannel(channelId) {
-    this._socket.send(JSON.stringify({
-      event: "join",
-      to: channelId
-    }));
+    this.queue.push(Message.event("leave", void 0, channelId));
+  }
+};
+
+// client/message.ts
+var Message = class {
+  static create(message, opts) {
+    return {
+      event: "message",
+      message,
+      echo: opts?.echo ?? false,
+      to: "all",
+      from: ""
+    };
+  }
+  /**
+   * @description Creates a custom event. If you are sending an event to a channel, you should not supply a channel name and instead use the channel's `sendMessage` method.
+   * @param event The name of the event
+   * @param message The message to send
+   * @param channel The channel to send the message to
+   */
+  static event(event, message, channel) {
+    return {
+      event,
+      message: message ?? "",
+      echo: false,
+      to: channel ?? "all",
+      from: ""
+    };
   }
 };
 
 // testClient.ts
-globalThis.Sockpuppet = Sockpuppet;
+var sockpuppet = new Sockpuppet("ws://localhost:8000");
+var channelName = "channel";
+sockpuppet.createChannel(channelName);
+sockpuppet.joinChannel(channelName);
+sockpuppet.addEventListener("message", (e) => {
+  console.log(e.detail.content);
+});
+sockpuppet.subscribe(channelName, (channel) => {
+  const listener = (e) => {
+    console.log(e.detail);
+  };
+  channel.addEventListener("message", listener);
+  channel.sendMessage(Message.create("Hello World!", { echo: true }));
+  return () => channel.removeEventListener("message", listener);
+});
