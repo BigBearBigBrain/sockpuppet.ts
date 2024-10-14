@@ -69,7 +69,7 @@ export class Sockpuppet extends EventTarget {
   }
 
   private handleMessage(socket: WebSocket, message: string) {
-    const msg = JSON.parse(message);
+    const msg = JSON.parse(message) as ClientPacket;
     switch (msg.event) {
       case "join":
         this.handleJoin(socket, msg);
@@ -117,26 +117,26 @@ export class Sockpuppet extends EventTarget {
 
   private handleJoin(
     socket: WebSocket,
-    msg: { channelId: string; message: string },
+    msg: ClientPacket,
   ) {
-    const channel = this.channels.get(msg.channelId);
+    const channel = this.channels.get(msg.to);
     const client = this.clients.get(socket);
     if (!client) return;
     channel?.addClient(client);
     socket.send(
-      new Packet(client, "join", msg.channelId, msg.channelId).serialize(),
+      new Packet(client, "join", msg.to, msg.to).serialize(),
     );
   }
 
-  private handleCreate(socket: WebSocket, msg: { channelId: string }) {
+  private handleCreate(socket: WebSocket, msg: ClientPacket) {
     const client = this.clients.get(socket);
     if (!client) return;
-    const channel = this.channels.get(msg.channelId);
+    const channel = this.channels.get(msg.to);
     if (!channel) {
-      this.createChannel(msg.channelId);
+      this.createChannel(msg.to);
     }
     socket.send(
-      new Packet(client, "create", msg.channelId, msg.channelId).serialize(),
+      new Packet(client, "create", msg.to, msg.to).serialize(),
     );
   }
 
@@ -168,28 +168,28 @@ export class Sockpuppet extends EventTarget {
     }
   }
 
-  private handleLeaveChannel(socket: WebSocket, msg: { channelId: string }) {
+  private handleLeaveChannel(socket: WebSocket, msg: ClientPacket) {
     const client = this.clients.get(socket);
     if (!client) return;
-    const channel = this.channels.get(msg.channelId);
+    const channel = this.channels.get(msg.to);
     if (channel) {
       channel.removeClient(client);
       socket.send(
-        new Packet(client, "leave", msg.channelId, msg.channelId).serialize(),
+        new Packet(client, "leave", msg.to, msg.to).serialize(),
       );
     }
   }
 
   private handleMessageEvent(
     socket: WebSocket,
-    msg: { event: string; channelId: string; message: string; echo: boolean },
+    msg: ClientPacket,
   ) {
     const client = this.clients.get(socket);
     if (!client) return;
     this.dispatchEvent(
       new CustomEvent(msg.event, {
         detail: {
-          channelId: msg.channelId,
+          channelId: msg.to,
           message: msg.message,
           echo: msg.echo,
         },
@@ -198,7 +198,7 @@ export class Sockpuppet extends EventTarget {
     const packet = new Packet(
       client,
       msg.event,
-      msg.channelId,
+      msg.to,
       msg.message,
       msg.echo,
     );

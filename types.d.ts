@@ -1,5 +1,3 @@
-import type { Channel } from "./server/channel.ts";
-import type { Channel as ClientChannel } from "./client/channel.ts";
 import type { Packet } from "./mod.ts";
 
 declare global {
@@ -9,6 +7,7 @@ declare global {
     to: string,
     from: string,
     message: string,
+    echo?: boolean
   } 
   interface IChannel<T = ClientPacket | Packet> extends EventTarget {
     id: string,

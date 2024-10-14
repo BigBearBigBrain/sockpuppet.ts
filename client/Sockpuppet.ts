@@ -94,6 +94,7 @@ export class Sockpuppet extends EventTarget {
     const channel = this.channels.get(message.to);
     if (channel) {
       channel.delete();
+      this.channels.delete(message.to)
     }
   }
   private handleCreate(message: ClientPacket) {
@@ -146,4 +147,24 @@ export class Sockpuppet extends EventTarget {
     const unsub = subscription(channel);
     channel.addEventListener("delete", unsub);
   }
+
+  public createChannel(channelId:string) {
+    this._socket.send(JSON.stringify({
+      event: "create",
+      to: channelId
+    }))
+  }
+  public joinChannel(channelId:string) {
+    this._socket.send(JSON.stringify({
+      event: "join",
+      to: channelId
+    }))
+  }
+  public leaveChannel(channelId:string) {
+    this._socket.send(JSON.stringify({
+      event: "join",
+      to: channelId
+    }))
+  }
+  
 }
