@@ -13,6 +13,7 @@
 Sockpuppet is a lightweight, event driven, and easy to use WebSocket library for
 Deno. It is designed to be simple and easy to use, while still providing a
 powerful and flexible API for building real-time applications.
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ## Usage
