@@ -15,27 +15,27 @@ export class Packet {
     this._from = from;
   }
 
-  public get event() {
+  public get event(): string {
     return this._event;
   }
 
-  public get to() {
+  public get to(): string {
     return this._to;
   }
 
-  public get message() {
+  public get message(): string {
     return this._message;
   }
 
-  public get echo() {
+  public get echo(): boolean {
     return this._echo;
   }
 
-  public get from() {
+  public get from(): Client {
     return this._from;
   }
   
-  public serialize() {
+  public serialize(): string {
     return JSON.stringify({
       event: this._event,
       to: this._to,

@@ -28,6 +28,14 @@ connections and messages.
 import { Sockpuppet } from "@cgg/sockpuppet";
 
 const sockpuppet = new Sockpuppet();
+sockpuppet.run();
+
+/*-- or, as a handler --*/
+Deno.serve(sockpuppet.handler);
+
+/*-- or, for autorun --*/
+
+using sockpuppet = new Sockpuppet();
 ```
 
 Sockpuppet is up and running! Now you can start handling WebSocket connections

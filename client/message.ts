@@ -1,3 +1,5 @@
+import type { ClientPacket } from "../globals.ts";
+
 export class Message {
   static create(message: string, opts?: { echo: boolean }): ClientPacket {
     return {

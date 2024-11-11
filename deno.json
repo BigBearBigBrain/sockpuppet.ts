@@ -11,10 +11,13 @@
     "@cgg/sockpuppet": "./server/mod.ts",
     "@cgg/sockpuppet/client": "./client/mod.ts"
   },
-  "name": "@cgg/sockpuppet",
-  "version": "0.0.0",
+  "name": "@bearmetal/sockpuppet",
+  "version": "1.0.0",
   "description": "A lightweight, event driven, and easy to use WebSocket library for Deno.",
-  "exports": "./server/mod.ts",
+  "exports": {
+    ".": "./server/mod.ts",
+    "./client": "./client/mod.ts"
+  },
   "exclude": [
     "./dash/"
   ],
@@ -24,9 +27,6 @@
       "deno.ns",
       "dom",
       "dom.iterable"
-    ],
-    "types": [
-      "./types.d.ts"
     ]
   }
 }

@@ -1,3 +1,4 @@
+import type { ChannelSubscription, ClientPacket, Handler, SockpuppetEventMap, TypedEventTarget } from "../globals.ts";
 import { Channel } from "./channel.ts";
 import { Client } from "./client.ts";
 import { Packet } from "./packet.ts";
@@ -24,7 +25,7 @@ export class Sockpuppet extends PuppetEventTarget {
 
   private asHandler = false;
 
-  public get handler() {
+  public get handler(): Handler {
     this.asHandler = true;
     return this._handler.bind(this);
   }

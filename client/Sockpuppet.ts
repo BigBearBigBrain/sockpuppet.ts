@@ -1,8 +1,11 @@
+import type { TypedEventTarget, SockpuppetEventMap, ClientChannelSubscription, ClientPacket } from "../globals.ts";
 import { Channel } from "./channel.ts";
-import { Message } from "@cgg/sockpuppet/client";
+import { Message } from "./message.ts";
+
+const EVT = (EventTarget as TypedEventTarget<SockpuppetEventMap>);
 
 export class Sockpuppet
-  extends (EventTarget as TypedEventTarget<SockpuppetEventMap>) {
+  extends EVT {
   private _socket!: WebSocket;
   private _handshakeVersion = "1.0";
   private _serverVersion = "1.0";
@@ -12,7 +15,7 @@ export class Sockpuppet
   private subscriptions: Map<string, ClientChannelSubscription[]> = new Map();
 
   private _id?: string;
-  public get id() {
+  public get id(): string | undefined {
     return this._id;
   }
 

@@ -1,5 +1,5 @@
-import { SockpuppetPlus } from "./server/Plus.ts";
-import { serveDir } from "@std/http/file-server";
+// import { SockpuppetPlus } from "./server/Plus.ts";
+// import { serveDir } from "@std/http/file-server";
 import { Sockpuppet } from "./server/Sockpuppet.ts";
 
 // import * as esbuild from "esbuild";
@@ -19,7 +19,9 @@ import { Sockpuppet } from "./server/Sockpuppet.ts";
 //   ],
 // });
 
-using sockpuppet = new Sockpuppet();
+const sockpuppet = new Sockpuppet();
+
+Deno.serve(sockpuppet.handler);
 
 // sockpuppet.addHandler((req) => {
 //   return serveDir(req, { fsRoot: "./public" });

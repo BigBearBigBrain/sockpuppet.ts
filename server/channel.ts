@@ -1,9 +1,12 @@
+import type { SockpuppetEventMap, TypedEventTarget } from "../globals.ts";
 import type { Client } from "./client.ts";
 import type { Packet } from "./packet.ts";
 import type { Sockpuppet } from "./Sockpuppet.ts";
 
+const EVT = EventTarget as TypedEventTarget<SockpuppetEventMap>;
+
 export class Channel
-  extends (EventTarget as TypedEventTarget<SockpuppetEventMap>) {
+  extends EVT {
   private clients: Set<Client> = new Set();
 
   constructor(
