@@ -11,7 +11,7 @@ export class SockpuppetPlus extends Sockpuppet {
     this.handlers.push(handler);
   }
 
-  protected override async handler(req: Request): Promise<Response> {
+  protected override async _handler(req: Request): Promise<Response> {
     for (const handler of this.handlers) {
       const res = handler(req);
       if (res) {
@@ -23,7 +23,7 @@ export class SockpuppetPlus extends Sockpuppet {
       }
     }
     if (req.headers.get("upgrade") === "websocket") {
-      return super.handler(req);
+      return super._handler(req);
     }
     return new Response("End of handlers", { status: 400 });
   }

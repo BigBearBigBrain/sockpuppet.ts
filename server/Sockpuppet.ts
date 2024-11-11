@@ -12,8 +12,8 @@ const illegalChannelNames = ["all", "message"];
 const PuppetEventTarget = EventTarget as TypedEventTarget<SockpuppetEventMap>;
 
 export class Sockpuppet extends PuppetEventTarget {
-  private server: Deno.HttpServer;
-  private _handshakeVersion = "1.0";
+  private _server?: Deno.HttpServer;
+  private handshakeVersion = "1.0";
 
   private clients: Map<WebSocket | string, Client> = new Map();
   private channels: Map<string, Channel> = new Map();
@@ -22,29 +22,26 @@ export class Sockpuppet extends PuppetEventTarget {
 
   private subscriptions: Map<string, ChannelSubscription[]> = new Map();
 
-  constructor(cfg?: PuppetConfig) {
-    super();
-    this.server = Deno.serve(
-      { port: cfg?.port, hostname: cfg?.host },
-      (r) => this.handler(r),
-    );
+  private asHandler = false;
+
+  public get handler() {
+    this.asHandler = true;
+    return this._handler.bind(this);
   }
 
-  protected handler(req: Request): Response | Promise<Response> {
+  constructor(
+    private config?: PuppetConfig,
+  ) {
+    super();
+  }
+
+  protected _handler(req: Request): Response | Promise<Response> {
     if (req.headers.get("upgrade") === "websocket") {
       const { socket, response } = Deno.upgradeWebSocket(req);
       this.handleConnection(socket);
       return response;
     }
     return new Response("Not a websocket request", { status: 400 });
-  }
-
-  public deleteClient(socket: WebSocket) {
-    const client = this.clients.get(socket);
-    this.clients.delete(socket);
-    this.channels.forEach((channel) => {
-      channel.removeClient(client);
-    });
   }
 
   private handleConnection(socket: WebSocket) {
@@ -104,18 +101,18 @@ export class Sockpuppet extends PuppetEventTarget {
     const client = this.clients.get(socket);
     if (!client) return;
     client.handshakeVersion = handshake.version;
-    if (handshake.version > this._handshakeVersion) {
+    if (handshake.version > this.handshakeVersion) {
       socket.send(JSON.stringify({
         error: "Outdated server handshake",
         status: 1,
-        version: this._handshakeVersion,
+        version: this.handshakeVersion,
         clientId: client.id,
         event: "handshake",
       }));
       return;
     }
     socket.send(JSON.stringify({
-      version: this._handshakeVersion,
+      version: this.handshakeVersion,
       status: 0,
       clientId: client.id,
       event: "handshake",
@@ -158,32 +155,12 @@ export class Sockpuppet extends PuppetEventTarget {
     );
   }
 
-  public createChannel(channelId: string) {
-    const channel = new Channel(channelId, this);
-    this.channels.set(channelId, channel);
-    for (const [pattern, subscriptions] of this.subscriptions) {
-      if (channelId.match(pattern)) {
-        for (const subscription of subscriptions) {
-          this.subscribeToChannel(subscription, channel);
-        }
-      }
-    }
-  }
-
   private subscribeToChannel(
     subscription: ChannelSubscription,
     channel: Channel,
   ) {
     const unsub = subscription(channel);
     channel.addEventListener("delete", unsub);
-  }
-
-  public deleteChannel(channelId: string) {
-    const channel = this.channels.get(channelId);
-    if (channel) {
-      this.channels.delete(channelId);
-      channel.delete();
-    }
   }
 
   private handleLeaveChannel(socket: WebSocket, msg: ClientPacket) {
@@ -237,6 +214,45 @@ export class Sockpuppet extends PuppetEventTarget {
     }
   }
 
+  // Management
+  public [Symbol.dispose]() {
+    if (!this.asHandler) {
+      this.run();
+      return;
+    }
+  }
+
+  // Public Methods
+
+  // API
+  public run() {
+    this.asHandler = true;
+    this._server = Deno.serve(
+      { port: this.config?.port, hostname: this.config?.host },
+      (r) => this._handler(r),
+    );
+  }
+
+  public createChannel(channelId: string) {
+    const channel = new Channel(channelId, this);
+    this.channels.set(channelId, channel);
+    for (const [pattern, subscriptions] of this.subscriptions) {
+      if (channelId.match(pattern)) {
+        for (const subscription of subscriptions) {
+          this.subscribeToChannel(subscription, channel);
+        }
+      }
+    }
+  }
+
+  public deleteChannel(channelId: string) {
+    const channel = this.channels.get(channelId);
+    if (channel) {
+      this.channels.delete(channelId);
+      channel.delete();
+    }
+  }
+
   public subscribe(pattern: string, callback: ChannelSubscription) {
     const subscriptions = this.subscriptions.get(pattern);
     if (subscriptions) {
@@ -249,5 +265,14 @@ export class Sockpuppet extends PuppetEventTarget {
     } else {
       this.subscriptions.set(pattern, [callback]);
     }
+  }
+
+  // Internal
+  public __deleteClient(socket: WebSocket) {
+    const client = this.clients.get(socket);
+    this.clients.delete(socket);
+    this.channels.forEach((channel) => {
+      channel.removeClient(client);
+    });
   }
 }

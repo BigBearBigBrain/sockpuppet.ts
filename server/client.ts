@@ -13,7 +13,7 @@ export class Client {
     this.socket = socket;
 
     this.socket.addEventListener("close", () => {
-      this.parent.deleteClient(this.socket);
+      this.parent.__deleteClient(this.socket);
     });
   }
 
@@ -21,7 +21,7 @@ export class Client {
     try {
       this.socket.send(packet.serialize());
     } catch (_e) {
-      this.parent.deleteClient(this.socket);
+      this.parent.__deleteClient(this.socket);
     }
   }
 }
