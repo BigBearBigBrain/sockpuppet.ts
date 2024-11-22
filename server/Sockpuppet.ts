@@ -36,7 +36,10 @@ export class Sockpuppet extends PuppetEventTarget {
     super();
   }
 
-  protected _handler(req: Request): Response | Promise<Response> {
+  protected _handler(req: Request, ctx?: {state:Record<string,unknown>}): Response | Promise<Response> {
+    if (ctx && ctx.state) {
+      ctx.state.puppet = this;
+    } 
     if (req.headers.get("upgrade") === "websocket") {
       const { socket, response } = Deno.upgradeWebSocket(req);
       this.handleConnection(socket);
@@ -251,6 +254,14 @@ export class Sockpuppet extends PuppetEventTarget {
     if (channel) {
       this.channels.delete(channelId);
       channel.delete();
+    }
+  }
+
+  public sendMessage(channelId: string, message: string) {
+    const channel = this.channels.get(channelId);
+    const packet = new Packet(new Client(crypto.randomUUID(), null, this), "message", channelId, message);
+    if (channel) {
+      channel.sendMessage(packet);
     }
   }
 

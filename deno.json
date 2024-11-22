@@ -12,7 +12,7 @@
     "@cgg/sockpuppet/client": "./client/mod.ts"
   },
   "name": "@bearmetal/sockpuppet",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A lightweight, event driven, and easy to use WebSocket library for Deno.",
   "exports": {
     ".": "./server/mod.ts",
